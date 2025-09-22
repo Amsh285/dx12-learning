@@ -9,7 +9,8 @@ namespace dx12Runtime
 		Undefined,
 		EnableDebugLayer,
 		GetAdapter,
-		CreateDevice
+		CreateDevice,
+		ConfigureInfoQueue
 	};
 
 	enum class Dx12SetupStatus
@@ -26,7 +27,9 @@ namespace dx12Runtime
 		NoHardwareAdapterFound,
 		QueryIDXGIAdapter4Failed,
 
-		D3D12CreateDeviceFailed
+		D3D12CreateDeviceFailed,
+
+		PushStorageFilterFailed
 	};
 
 	struct Dx12SetupResult
@@ -35,10 +38,6 @@ namespace dx12Runtime
 		Dx12SetupStatus status = Dx12SetupStatus::Success;
 		HRESULT code = S_OK;
 	};
-
-
-	extern Microsoft::WRL::ComPtr<IDXGIAdapter4> g_adapter;
-	extern Microsoft::WRL::ComPtr<ID3D12Device10> g_device;
 
 	Dx12SetupResult Setup();
 }

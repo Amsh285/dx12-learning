@@ -1,17 +1,16 @@
 
 #include "pch.h"
+
+#include "Dx12Setup.h"
 #include "Dx12Runtime.h"
 
 using namespace Microsoft::WRL;
 
 namespace dx12Runtime
 {
-	ComPtr<IDXGIAdapter4> g_adapter;
-	ComPtr<ID3D12Device10> g_device;
-
 	Dx12SetupResult EnableDebugLayer();
 
-	Dx12SetupResult GetAdapter(bool useWarp, IDXGIAdapter4** adapter);
+	Dx12SetupResult GetAdapter(bool useWarp);
 
 	Dx12SetupResult ConfigureInfoQueue();
 
@@ -35,7 +34,7 @@ namespace dx12Runtime
 			return result;
 		}
 
-		result = GetAdapter(false, g_adapter.GetAddressOf());
+		result = GetAdapter(false);
 
 		if (result.status != Dx12SetupStatus::Success)
 		{
@@ -50,6 +49,11 @@ namespace dx12Runtime
 			logger.Error("Failed to create Device. Setup state: {0}. Error code: {1}", static_cast<int>(Dx12SetupStatus::D3D12CreateDeviceFailed), hr);
 			return { Dx12SetupContext::CreateDevice, Dx12SetupStatus::D3D12CreateDeviceFailed, hr };
 		}
+
+		result = ConfigureInfoQueue();
+
+		if(result.status != Dx12SetupStatus::Success)
+			logger.Warn("Failed to configure Infoqueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 
 		logger.Info("Dx12 runtime setup completed successful.");
 		return result;
@@ -69,11 +73,11 @@ namespace dx12Runtime
 		return {};
 	}
 
-	Dx12SetupResult GetAdapter(bool useWarp, IDXGIAdapter4** adapter)
+	Dx12SetupResult GetAdapter(bool useWarp)
 	{
 		using namespace Microsoft::WRL;
 
-		assert(*adapter == nullptr);
+		assert(g_adapter == nullptr);
 
 		ComPtr<IDXGIFactory4> dxgiFactory = nullptr;
 		uint32_t createFactoryFlags = 0;
@@ -102,7 +106,7 @@ namespace dx12Runtime
 			if (FAILED(result))
 				return { Dx12SetupContext::GetAdapter, Dx12SetupStatus::DxGiCastFailed, result };
 
-			*adapter = adapterT.Detach();
+			g_adapter = adapterT.Detach();
 		}
 		else
 		{
@@ -136,9 +140,55 @@ namespace dx12Runtime
 			if (FAILED(result))
 				return { Dx12SetupContext::GetAdapter, Dx12SetupStatus::DxGiCastFailed, result };
 
-			*adapter = bestAdapterT.Detach();
+			g_adapter = bestAdapterT.Detach();
 		}
 
+		return {};
+	}
+
+	Dx12SetupResult ConfigureInfoQueue()
+	{
+#if defined(_DEBUG)
+		assert(g_device != nullptr);
+
+		ComPtr<ID3D12InfoQueue> infoQueue;
+		HRESULT hr = g_device.As(&infoQueue);
+		
+		if (FAILED(hr))
+			return { Dx12SetupContext::ConfigureInfoQueue, Dx12SetupStatus::DxGiCastFailed, hr };
+
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+
+		// try to fix warnings on debug build
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
+
+		D3D12_MESSAGE_SEVERITY Severities[] =
+		{
+			D3D12_MESSAGE_SEVERITY_INFO
+		};
+
+		// Suppress individual messages by their ID
+		D3D12_MESSAGE_ID DenyIds[] = {
+			D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,   // I'm really not sure how to avoid this message.
+			D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,                         // This warning occurs when using capture frame while graphics debugging.
+			D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,                       // This warning occurs when using capture frame while graphics debugging.
+		};
+
+		D3D12_INFO_QUEUE_FILTER NewFilter = {};
+		//NewFilter.DenyList.NumCategories = _countof(Categories);
+		//NewFilter.DenyList.pCategoryList = Categories;
+		NewFilter.DenyList.NumSeverities = _countof(Severities);
+		NewFilter.DenyList.pSeverityList = Severities;
+		NewFilter.DenyList.NumIDs = _countof(DenyIds);
+		NewFilter.DenyList.pIDList = DenyIds;
+
+		hr = infoQueue->PushStorageFilter(&NewFilter);
+
+		if (FAILED(hr))
+			return { Dx12SetupContext::ConfigureInfoQueue, Dx12SetupStatus::PushStorageFilterFailed, hr };
+
+#endif
 		return {};
 	}
 }

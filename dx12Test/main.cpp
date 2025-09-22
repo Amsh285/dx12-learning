@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "Logger.h"
-#include "Dx12Runtime.h"
+#include "Dx12Setup.h"
 
 using namespace Microsoft::WRL;
 
