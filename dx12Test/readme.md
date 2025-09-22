@@ -1,0 +1,1 @@
+linker -> additional dependencies - dxgi.lib;d3d12.lib
