@@ -1,9 +1,10 @@
 #include "pch.h"
 
 #include "Logger.h"
-#include "Dx12Setup.h"
+#include "Directx12/Runtime/Dx12Setup.h"
 
 using namespace Microsoft::WRL;
+using namespace directx12::runtime;
 
 // By default, enable V-Sync.
 // Can be toggled with the V key.
@@ -118,7 +119,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 		return EXIT_FAILURE;
 	}
 
-	dx12Runtime::Dx12SetupResult result = dx12Runtime::Setup();
+	Dx12SetupResult result = Setup();
 
 
 	/*DXGI_ADAPTER_DESC1 desc = {};

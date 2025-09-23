@@ -53,7 +53,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Vendor;$(ProjectDir)Dx12Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -74,7 +74,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Vendor;$(ProjectDir)Dx12Runtime;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -86,8 +86,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Dx12Runtime\Dx12Runtime.cpp" />
-    <ClCompile Include="Dx12Runtime\Dx12Setup.cpp" />
+    <ClCompile Include="Directx12\Dx12Renderer.cpp" />
+    <ClCompile Include="Directx12\Runtime\Dx12Runtime.cpp" />
+    <ClCompile Include="Directx12\Runtime\Dx12Setup.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
@@ -96,8 +97,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Dx12Runtime\Dx12Runtime.h" />
-    <ClInclude Include="Dx12Runtime\Dx12Setup.h" />
+    <ClInclude Include="Directx12\Dx12Renderer.h" />
+    <ClInclude Include="Directx12\Runtime\Dx12Runtime.h" />
+    <ClInclude Include="Directx12\Runtime\Dx12Setup.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

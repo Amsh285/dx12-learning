@@ -24,10 +24,13 @@
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Dx12Runtime\Dx12Setup.cpp">
+    <ClCompile Include="Directx12\Runtime\Dx12Setup.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Dx12Runtime\Dx12Runtime.cpp">
+    <ClCompile Include="Directx12\Runtime\Dx12Runtime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Directx12\Dx12Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,10 +41,13 @@
     <ClInclude Include="Logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Dx12Runtime\Dx12Setup.h">
+    <ClInclude Include="Directx12\Runtime\Dx12Setup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Dx12Runtime\Dx12Runtime.h">
+    <ClInclude Include="Directx12\Runtime\Dx12Runtime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx12\Dx12Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
