@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Dx12ResultCode.h"
 #include "Logger.h"
 
 namespace directx12
@@ -15,29 +16,10 @@ namespace directx12
 			ConfigureInfoQueue
 		};
 
-		enum class Dx12SetupStatus
-		{
-			Success,
-
-			QueryDebugInterfaceFailed,
-
-			DxGiCastFailed,
-
-			CreateDXGIFactory2Failed,
-
-			EnumWarpAdapterFailed,
-			NoHardwareAdapterFound,
-			QueryIDXGIAdapter4Failed,
-
-			D3D12CreateDeviceFailed,
-
-			PushStorageFilterFailed
-		};
-
 		struct Dx12SetupResult
 		{
 			Dx12SetupContext context = Dx12SetupContext::Undefined;
-			Dx12SetupStatus status = Dx12SetupStatus::Success;
+			Dx12ResultCode status = Dx12ResultCode::Success;
 			HRESULT code = S_OK;
 		};
 

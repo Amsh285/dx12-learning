@@ -30,7 +30,7 @@ namespace directx12
 
 			Dx12SetupResult result = EnableDebugLayer();
 
-			if (result.status != Dx12SetupStatus::Success)
+			if (result.status != Dx12ResultCode::Success)
 			{
 				logger.Error("Failed to activate debug layer. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 				return result;
@@ -38,7 +38,7 @@ namespace directx12
 
 			result = GetAdapter(false);
 
-			if (result.status != Dx12SetupStatus::Success)
+			if (result.status != Dx12ResultCode::Success)
 			{
 				logger.Error("Failed to retrieve Adapter. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 				return result;
@@ -48,13 +48,13 @@ namespace directx12
 
 			if (FAILED(hr))
 			{
-				logger.Error("Failed to create Device. Setup state: {0}. Error code: {1}", static_cast<int>(Dx12SetupStatus::D3D12CreateDeviceFailed), hr);
-				return { Dx12SetupContext::CreateDevice, Dx12SetupStatus::D3D12CreateDeviceFailed, hr };
+				logger.Error("Failed to create Device. Setup state: {0}. Error code: {1}", static_cast<int>(Dx12ResultCode::D3D12CreateDeviceFailed), hr);
+				return { Dx12SetupContext::CreateDevice, Dx12ResultCode::D3D12CreateDeviceFailed, hr };
 			}
 
 			result = ConfigureInfoQueue();
 
-			if (result.status != Dx12SetupStatus::Success)
+			if (result.status != Dx12ResultCode::Success)
 				logger.Warn("Failed to configure Infoqueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 
 			logger.Info("Dx12 runtime setup completed successful.");
@@ -68,7 +68,7 @@ namespace directx12
 			HRESULT result = D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface));
 
 			if (FAILED(result))
-				return { Dx12SetupContext::EnableDebugLayer, Dx12SetupStatus::QueryDebugInterfaceFailed, result };
+				return { Dx12SetupContext::EnableDebugLayer, Dx12ResultCode::QueryDebugInterfaceFailed, result };
 
 			debugInterface->EnableDebugLayer();
 #endif
@@ -91,7 +91,7 @@ namespace directx12
 			HRESULT result = CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory));
 
 			if (FAILED(result))
-				return { Dx12SetupContext::GetAdapter, Dx12SetupStatus::CreateDXGIFactory2Failed, result };
+				return { Dx12SetupContext::GetAdapter, Dx12ResultCode::CreateDXGIFactoryFailed, result };
 
 			if (useWarp)
 			{
@@ -100,13 +100,13 @@ namespace directx12
 				result = dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter1));
 
 				if (FAILED(result))
-					return { Dx12SetupContext::GetAdapter, Dx12SetupStatus::EnumWarpAdapterFailed, result };
+					return { Dx12SetupContext::GetAdapter, Dx12ResultCode::EnumWarpAdapterFailed, result };
 
 				ComPtr<IDXGIAdapter4> adapterT;
 				result = adapter1.As(&adapterT);
 
 				if (FAILED(result))
-					return { Dx12SetupContext::GetAdapter, Dx12SetupStatus::DxGiCastFailed, result };
+					return { Dx12SetupContext::GetAdapter, Dx12ResultCode::ComInterfaceCastFailed, result };
 
 				g_adapter = adapterT.Detach();
 			}
@@ -134,13 +134,13 @@ namespace directx12
 				}
 
 				if (!bestAdapter1)
-					return { Dx12SetupContext::GetAdapter, Dx12SetupStatus::NoHardwareAdapterFound, E_FAIL };
+					return { Dx12SetupContext::GetAdapter, Dx12ResultCode::NoHardwareAdapterFound, E_FAIL };
 
 				ComPtr<IDXGIAdapter4> bestAdapterT;
 				result = bestAdapter1.As(&bestAdapterT);
 
 				if (FAILED(result))
-					return { Dx12SetupContext::GetAdapter, Dx12SetupStatus::DxGiCastFailed, result };
+					return { Dx12SetupContext::GetAdapter, Dx12ResultCode::ComInterfaceCastFailed, result };
 
 				g_adapter = bestAdapterT.Detach();
 			}
@@ -157,7 +157,7 @@ namespace directx12
 			HRESULT hr = g_device.As(&infoQueue);
 
 			if (FAILED(hr))
-				return { Dx12SetupContext::ConfigureInfoQueue, Dx12SetupStatus::DxGiCastFailed, hr };
+				return { Dx12SetupContext::ConfigureInfoQueue, Dx12ResultCode::ComInterfaceCastFailed, hr };
 
 			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
@@ -188,7 +188,7 @@ namespace directx12
 			hr = infoQueue->PushStorageFilter(&NewFilter);
 
 			if (FAILED(hr))
-				return { Dx12SetupContext::ConfigureInfoQueue, Dx12SetupStatus::PushStorageFilterFailed, hr };
+				return { Dx12SetupContext::ConfigureInfoQueue, Dx12ResultCode::PushStorageFilterFailed, hr };
 
 #endif
 			return {};

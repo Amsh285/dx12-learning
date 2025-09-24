@@ -50,5 +50,8 @@
     <ClInclude Include="Directx12\Dx12Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Directx12\Dx12ResultCode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
