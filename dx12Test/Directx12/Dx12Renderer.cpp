@@ -9,15 +9,12 @@ using namespace Microsoft::WRL;
 
 namespace directx12
 {
-	std::shared_ptr<Dx12Renderer> Dx12Renderer::Get()
+	Dx12Renderer::Dx12Renderer(const windows::WindowData& windowData)
+		: m_windowData(windowData)
 	{
-		struct enable_make_shared : public Dx12Renderer {};
-		static std::shared_ptr<Dx12Renderer> s_renderer = std::make_shared<enable_make_shared>();
-
-		return s_renderer;
 	}
 
-	Dx12RendererSetupResult Dx12Renderer::Setup(const windows::WindowData& windowData)
+	Dx12RendererSetupResult Dx12Renderer::Setup()
 	{
 		using namespace directx12::runtime;
 

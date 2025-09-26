@@ -21,17 +21,14 @@ namespace directx12
 	class Dx12Renderer
 	{
 	public:
-		static std::shared_ptr<Dx12Renderer> Get();
+		Dx12Renderer(const windows::WindowData& windowData);
 
-		Dx12RendererSetupResult Setup(const windows::WindowData& windowData);
+		Dx12RendererSetupResult Setup();
 	private:
-		Dx12Renderer() = default;
-
-		
 		Dx12RendererSetupResult CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
 		
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
 
-		bool m_tearingSupported = false;
+		windows::WindowData m_windowData;
 	};
 }

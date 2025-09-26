@@ -126,8 +126,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 	WindowData windowData = { g_WindowHandle, g_ClientWidth, g_ClientHeight };
 
 	Dx12SetupResult runtimeSetupResult = directx12::runtime::Setup();
-	Dx12RendererSetupResult renderSetupResult = Dx12Renderer::Get()->Setup(windowData);
 
+	Dx12Renderer renderer(windowData);
+	Dx12RendererSetupResult renderSetupResult = renderer.Setup();
 
 	/*DXGI_ADAPTER_DESC1 desc = {};
 	adapter->GetDesc1(&desc);
