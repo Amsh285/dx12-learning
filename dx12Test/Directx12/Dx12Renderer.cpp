@@ -17,56 +17,25 @@ namespace directx12
 		return s_renderer;
 	}
 
-	Dx12RendererSetupResult Dx12Renderer::Setup()
+	Dx12RendererSetupResult Dx12Renderer::Setup(const windows::WindowData& windowData)
 	{
 		using namespace directx12::runtime;
 
 		Logger logger("Dx12Renderer");
 		logger.Info("Initializing Dx12Renderer.");
 
-		Dx12RendererSetupResult result = CheckTearingSupport();
-		if (result.status != Dx12ResultCode::Success)
-		{
-			logger.Error("Failed to check for Tearing-Support. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
-			return result;
-		}
+		Dx12RendererSetupResult result = CreateCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 
-		result = CreateCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 		if (result.status != Dx12ResultCode::Success)
 		{
 			logger.Error("Failed to create CommandQueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 			return result;
 		}
 
+
+
 		
 		logger.Info("Dx12Renderer initialization complete.");
-		return {};
-	}
-
-	Dx12RendererSetupResult Dx12Renderer::CheckTearingSupport()
-	{
-		using namespace Microsoft::WRL;
-
-		ComPtr<IDXGIFactory4> factory4;
-		HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory4));
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CheckTearingSupport, Dx12ResultCode::CreateDXGIFactoryFailed, hr };
-
-		ComPtr<IDXGIFactory5> factory5;
-		hr = factory4.As(&factory5);
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CheckTearingSupport, Dx12ResultCode::ComInterfaceCastFailed, hr };
-
-		BOOL allowTearing = FALSE;
-		hr = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CheckTearingSupport, Dx12ResultCode::DXGIFactoryCheckFeatureSupportFaile, hr };
-
-		m_tearingSupported = allowTearing != FALSE;
-
 		return {};
 	}
 

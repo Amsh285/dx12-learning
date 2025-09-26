@@ -3,11 +3,13 @@
 #include "Logger.h"
 #include "Directx12/Runtime/Dx12Setup.h"
 #include "Directx12/Dx12Renderer.h"
+#include "Windows/WindowData.h"
 
 using namespace Microsoft::WRL;
 
 using namespace directx12;
 using namespace directx12::runtime;
+using namespace windows;
 
 // By default, enable V-Sync.
 // Can be toggled with the V key.
@@ -49,7 +51,6 @@ uint64_t g_FrameFenceValues[g_NumFrames] = {};
 HANDLE g_FenceEvent;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ PWSTR cmdline, _In_ int cmdshow)
@@ -122,8 +123,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 		return EXIT_FAILURE;
 	}
 
+	WindowData windowData = { g_WindowHandle, g_ClientWidth, g_ClientHeight };
+
 	Dx12SetupResult runtimeSetupResult = directx12::runtime::Setup();
-	Dx12RendererSetupResult renderSetupResult = Dx12Renderer::Get()->Setup();
+	Dx12RendererSetupResult renderSetupResult = Dx12Renderer::Get()->Setup(windowData);
 
 
 	/*DXGI_ADAPTER_DESC1 desc = {};

@@ -13,7 +13,8 @@ namespace directx12
 			EnableDebugLayer,
 			GetAdapter,
 			CreateDevice,
-			ConfigureInfoQueue
+			ConfigureInfoQueue,
+			CheckTearingSupport
 		};
 
 		struct Dx12SetupResult

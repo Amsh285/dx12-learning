@@ -16,6 +16,8 @@ namespace directx12
 
 		Dx12SetupResult ConfigureInfoQueue();
 
+		Dx12SetupResult CheckTearingSupport();
+
 		Dx12SetupResult Setup()
 		{
 			Logger logger("Dx12 runtime setup");
@@ -60,6 +62,12 @@ namespace directx12
 				return result;
 			}
 				
+			result = CheckTearingSupport();
+			if (result.status != Dx12ResultCode::Success)
+			{
+				logger.Error("Failed to check for Tearing-Support. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+				return result;
+			}
 
 			logger.Info("Dx12 runtime setup completed successful.");
 			return result;
@@ -195,6 +203,31 @@ namespace directx12
 				return { Dx12SetupContext::ConfigureInfoQueue, Dx12ResultCode::PushStorageFilterFailed, hr };
 
 #endif
+			return {};
+		}
+
+		Dx12SetupResult CheckTearingSupport()
+		{
+			ComPtr<IDXGIFactory4> factory4;
+			HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory4));
+
+			if (FAILED(hr))
+				return { Dx12SetupContext::CheckTearingSupport, Dx12ResultCode::CreateDXGIFactoryFailed, hr };
+
+			ComPtr<IDXGIFactory5> factory5;
+			hr = factory4.As(&factory5);
+
+			if (FAILED(hr))
+				return { Dx12SetupContext::CheckTearingSupport, Dx12ResultCode::ComInterfaceCastFailed, hr };
+
+			BOOL allowTearing = FALSE;
+			hr = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
+
+			if (FAILED(hr))
+				return { Dx12SetupContext::CheckTearingSupport, Dx12ResultCode::DXGIFactoryCheckFeatureSupportFaile, hr };
+
+			g_tearingSupported = allowTearing != FALSE;
+
 			return {};
 		}
 	}

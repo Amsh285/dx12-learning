@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Dx12ResultCode.h"
+#include "Windows/WindowData.h"
 
 namespace directx12
 {
 	enum class Dx12RendererSetupContext
 	{
 		Undefined,
-		CreateCommandQueue,
-		CheckTearingSupport
+		CreateCommandQueue
 	};
 
 	struct Dx12RendererSetupResult
@@ -23,11 +23,11 @@ namespace directx12
 	public:
 		static std::shared_ptr<Dx12Renderer> Get();
 
-		Dx12RendererSetupResult Setup();
+		Dx12RendererSetupResult Setup(const windows::WindowData& windowData);
 	private:
 		Dx12Renderer() = default;
 
-		Dx12RendererSetupResult CheckTearingSupport();
+		
 		Dx12RendererSetupResult CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
 		
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;

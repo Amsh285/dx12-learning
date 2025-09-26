@@ -9,5 +9,7 @@ namespace directx12
 	{
 		ComPtr<IDXGIAdapter4> g_adapter;
 		ComPtr<ID3D12Device10> g_device;
+
+		bool g_tearingSupported = false;
 	}
 }
