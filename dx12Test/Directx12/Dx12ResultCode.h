@@ -7,16 +7,18 @@ namespace directx12
 		// General
 		Success,
 		ComInterfaceCastFailed,
+		CreateDXGIFactoryFailed,
+		DXGIFactoryCheckFeatureSupportFaile,
 		UnknownError,
 
 		// Runtime / Setup errors
 		QueryDebugInterfaceFailed,
-		CreateDXGIFactoryFailed,
 		EnumWarpAdapterFailed,
 		NoHardwareAdapterFound,
 		D3D12CreateDeviceFailed,
-		PushStorageFilterFailed
+		PushStorageFilterFailed,
 
 		// Renderer / Command queue errors
+		CreateCommandQueueFailed
 	};
 }

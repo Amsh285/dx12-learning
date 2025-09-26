@@ -55,7 +55,11 @@ namespace directx12
 			result = ConfigureInfoQueue();
 
 			if (result.status != Dx12ResultCode::Success)
-				logger.Warn("Failed to configure Infoqueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			{
+				logger.Error("Failed to configure Infoqueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+				return result;
+			}
+				
 
 			logger.Info("Dx12 runtime setup completed successful.");
 			return result;

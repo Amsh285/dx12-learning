@@ -2,8 +2,11 @@
 
 #include "Logger.h"
 #include "Directx12/Runtime/Dx12Setup.h"
+#include "Directx12/Dx12Renderer.h"
 
 using namespace Microsoft::WRL;
+
+using namespace directx12;
 using namespace directx12::runtime;
 
 // By default, enable V-Sync.
@@ -119,19 +122,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 		return EXIT_FAILURE;
 	}
 
-	Dx12SetupResult result = Setup();
+	Dx12SetupResult runtimeSetupResult = directx12::runtime::Setup();
+	Dx12RendererSetupResult renderSetupResult = Dx12Renderer::Get()->Setup();
 
 
 	/*DXGI_ADAPTER_DESC1 desc = {};
 	adapter->GetDesc1(&desc);
 	OutputDebugStringW(desc.Description);
 	OutputDebugStringW(L"\n");*/
-
-	if (FAILED(result.code))
-	{
-		OutputDebugString(L"Failed to create d3dDevice.");
-		return EXIT_FAILURE;
-	}
 
 	ShowWindow(g_WindowHandle, SW_SHOW);
 
