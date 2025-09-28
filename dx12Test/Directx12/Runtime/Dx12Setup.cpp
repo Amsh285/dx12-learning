@@ -21,13 +21,6 @@ namespace directx12
 		Dx12SetupResult Setup()
 		{
 			Logger logger("Dx12 runtime setup");
-
-			if (g_device)
-			{
-				logger.Warn("Dx12 device already initialized. Cancelling runtime setup.");
-				return {};
-			}
-
 			logger.Info("Starting Dx12 runtime setup.");
 
 			Dx12SetupResult result = EnableDebugLayer();
@@ -94,7 +87,7 @@ namespace directx12
 			assert(g_adapter == nullptr);
 
 			ComPtr<IDXGIFactory4> dxgiFactory = nullptr;
-			uint32_t createFactoryFlags = 0;
+			UINT createFactoryFlags = 0;
 
 #if defined(_DEBUG)
 			createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
@@ -224,7 +217,7 @@ namespace directx12
 			hr = factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
 
 			if (FAILED(hr))
-				return { Dx12SetupContext::CheckTearingSupport, Dx12ResultCode::DXGIFactoryCheckFeatureSupportFaile, hr };
+				return { Dx12SetupContext::CheckTearingSupport, Dx12ResultCode::DXGIFactoryCheckFeatureSupportFailed, hr };
 
 			g_tearingSupported = allowTearing != FALSE;
 

@@ -12,6 +12,8 @@ namespace directx12
 	Dx12Renderer::Dx12Renderer(const windows::WindowData& windowData)
 		: m_windowData(windowData)
 	{
+		m_backBuffers.resize(m_frameCount);
+		m_rtvHandles.resize(m_frameCount);
 	}
 
 	Dx12RendererSetupResult Dx12Renderer::Setup()
@@ -29,9 +31,31 @@ namespace directx12
 			return result;
 		}
 
+		result = CreateSwapChain();
+
+		if (result.status != Dx12ResultCode::Success)
+		{
+			logger.Error("Failed to create SwapChain. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			return result;
+		}
+
+		result = CreateRTVDescriptorHeap();
+
+		if (result.status != Dx12ResultCode::Success)
+		{
+			logger.Error("Failed to create RTVDescriptorheap. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			return result;
+		}
+
+		result = UpdateRenderTargetViews();
+
+		if (result.status != Dx12ResultCode::Success)
+		{
+			logger.Error("Failed to create RenderTargetViews. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			return result;
+		}
 
 
-		
 		logger.Info("Dx12Renderer initialization complete.");
 		return {};
 	}
@@ -48,6 +72,95 @@ namespace directx12
 
 		if (FAILED(hr))
 			return { Dx12RendererSetupContext::CreateCommandQueue, Dx12ResultCode::CreateCommandQueueFailed, hr };
+
+		return {};
+	}
+
+	Dx12RendererSetupResult Dx12Renderer::CreateSwapChain()
+	{
+		ComPtr<IDXGIFactory4> dxgiFactory4;
+		UINT createFactoryFlags = 0;
+
+#if defined(_DEBUG)
+		createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#endif
+
+		HRESULT hr = CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory4));
+
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::CreateDXGIFactoryFailed, hr };
+
+		DXGI_SWAP_CHAIN_DESC1 desc = {};
+		desc.Width = m_windowData.clientWidth;
+		desc.Height = m_windowData.clientHeight;
+		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.Stereo = FALSE;
+		desc.SampleDesc = { 1, 0 };
+		desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		desc.BufferCount = m_frameCount;
+		desc.Scaling = DXGI_SCALING_STRETCH;
+		desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		desc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+		desc.Flags = runtime::g_tearingSupported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+
+		ComPtr<IDXGISwapChain1> swapChain1;
+		hr = dxgiFactory4->CreateSwapChainForHwnd(
+			m_commandQueue.Get(),
+			m_windowData.windowHandle,
+			&desc,
+			nullptr,
+			nullptr,
+			&swapChain1
+		);
+
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::CreateSwapChainFailed, hr };
+
+		hr = dxgiFactory4->MakeWindowAssociation(m_windowData.windowHandle, DXGI_MWA_NO_ALT_ENTER);
+
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::MakeWindowAssociationFailed, hr };
+
+		hr = swapChain1.As(&m_swapChain);
+
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::ComInterfaceCastFailed, hr };
+
+		return {};
+	}
+
+	Dx12RendererSetupResult Dx12Renderer::CreateRTVDescriptorHeap()
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.NumDescriptors = m_frameCount;
+		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+		HRESULT hr = runtime::g_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_rtvDescriptorHeap));
+		
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateRTVDescriptorHeap, Dx12ResultCode::CreateDescriptorHeapFailed, hr };
+
+		return {};
+	}
+
+	Dx12RendererSetupResult Dx12Renderer::UpdateRenderTargetViews()
+	{
+		UINT rtvDescriptorSize = runtime::g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+		for (size_t i = 0; i < m_frameCount; ++i)
+		{
+			HRESULT hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_backBuffers[i].GetAddressOf()));
+
+			if (FAILED(hr))
+				return { Dx12RendererSetupContext::UpdateRenderTargetViews, Dx12ResultCode::CreateBufferFailed, hr };
+
+			runtime::g_device->CreateRenderTargetView(m_backBuffers[i].Get(), nullptr, rtvHandle);
+
+			m_rtvHandles[i] = rtvHandle;
+			rtvHandle.ptr += rtvDescriptorSize;
+		}
 
 		return {};
 	}

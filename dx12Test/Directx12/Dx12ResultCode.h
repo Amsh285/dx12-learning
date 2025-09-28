@@ -8,7 +8,10 @@ namespace directx12
 		Success,
 		ComInterfaceCastFailed,
 		CreateDXGIFactoryFailed,
-		DXGIFactoryCheckFeatureSupportFaile,
+		CreateDescriptorHeapFailed,
+		CreateBufferFailed,
+		DXGIFactoryCheckFeatureSupportFailed,
+		MakeWindowAssociationFailed,
 		UnknownError,
 
 		// Runtime / Setup errors
@@ -19,6 +22,7 @@ namespace directx12
 		PushStorageFilterFailed,
 
 		// Renderer / Command queue errors
-		CreateCommandQueueFailed
+		CreateCommandQueueFailed,
+		CreateSwapChainFailed
 	};
 }
