@@ -8,5 +8,7 @@ namespace directx12
 		extern Microsoft::WRL::ComPtr<ID3D12Device10> g_device;
 
 		extern bool g_tearingSupported;
+
+		void ReportLiveObjects();
 	}
 }

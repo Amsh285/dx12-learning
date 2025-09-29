@@ -4,25 +4,27 @@ namespace directx12
 {
 	enum class Dx12ResultCode
 	{
-		// General
 		Success,
-		ComInterfaceCastFailed,
-		CreateDXGIFactoryFailed,
-		CreateDescriptorHeapFailed,
-		CreateBufferFailed,
-		DXGIFactoryCheckFeatureSupportFailed,
-		MakeWindowAssociationFailed,
 		UnknownError,
 
-		// Runtime / Setup errors
+		ComInterfaceCastFailed,
+
+		CreateDXGIFactoryFailed,
+		CreateDeviceFailed,
+		CreateCommandQueueFailed,
+		CreateSwapChainFailed,
+		CreateDescriptorHeapFailed,
+		CreateBufferFailed,
+		CreateCommandAllocatorFailed,
+		CreateCommandListFailed,
+		CreateFenceFailed,
+		
 		QueryDebugInterfaceFailed,
 		EnumWarpAdapterFailed,
 		NoHardwareAdapterFound,
-		D3D12CreateDeviceFailed,
+		MakeWindowAssociationFailed,
 		PushStorageFilterFailed,
-
-		// Renderer / Command queue errors
-		CreateCommandQueueFailed,
-		CreateSwapChainFailed
+		DXGIFactoryCheckFeatureSupportFailed,
+		GraphicsCommandListCloseFailed
 	};
 }

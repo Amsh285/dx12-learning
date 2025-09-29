@@ -43,8 +43,8 @@ namespace directx12
 
 			if (FAILED(hr))
 			{
-				logger.Error("Failed to create Device. Setup state: {0}. Error code: {1}", static_cast<int>(Dx12ResultCode::D3D12CreateDeviceFailed), hr);
-				return { Dx12SetupContext::CreateDevice, Dx12ResultCode::D3D12CreateDeviceFailed, hr };
+				logger.Error("Failed to create Device. Setup state: {0}. Error code: {1}", static_cast<int>(Dx12ResultCode::CreateDeviceFailed), hr);
+				return { Dx12SetupContext::CreateDevice, Dx12ResultCode::CreateDeviceFailed, hr };
 			}
 
 			result = ConfigureInfoQueue();
@@ -168,7 +168,10 @@ namespace directx12
 			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
 
 			// try to fix warnings on debug build
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
+			// Todo: This crashes on ReportLiveObjects as they produce warnings.
+			// Fix this later. Maybe crashes on warnings are bad anyways.
+			// You can read/ fix them without producing a break
+			//infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 
 			D3D12_MESSAGE_SEVERITY Severities[] =
 			{

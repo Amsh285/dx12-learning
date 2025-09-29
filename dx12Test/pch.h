@@ -24,6 +24,7 @@
 // DirectX 12 specific headers.
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <dxgidebug.h>
 
 // has to be linked later
 /*When using runtime compiled HLSL shaders using any of the D3DCompiler functions, do not forget to link against the d3dcompiler.lib library

@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "Logger.h"
+#include "Directx12/Runtime/Dx12Runtime.h"
 #include "Directx12/Runtime/Dx12Setup.h"
 #include "Directx12/Dx12Renderer.h"
 #include "Windows/WindowData.h"
@@ -14,13 +15,9 @@ using namespace windows;
 // By default, enable V-Sync.
 // Can be toggled with the V key.
 bool g_VSync = true;
-bool g_TearingSupported = false;
 // By default, use windowed mode.
 // Can be toggled with the Alt+Enter or F11
 bool g_Fullscreen = false;
-
-// number of backbuffers
-const uint8_t g_NumFrames = 3;
 
 bool g_UseWarp = false;
 
@@ -28,27 +25,9 @@ uint32_t g_ClientWidth = 1280;
 uint32_t g_ClientHeight = 720;
 
 bool g_IsInitialized = false;
-uint32_t g_RTVDescriptorSize;
-uint32_t g_CurrentBackBufferIndex;
 
 HWND g_WindowHandle;
 RECT g_WindowRect;
-
-ComPtr<IDXGISwapChain4> g_SwapChain;
-
-ComPtr<ID3D12CommandQueue> g_CommandQueue;
-ComPtr<ID3D12GraphicsCommandList> g_CommandList;
-ComPtr<ID3D12CommandAllocator> g_CommandAllocator[g_NumFrames];
-
-ComPtr<ID3D12DescriptorHeap> g_RTVDescriptorHeap;
-ComPtr<ID3D12Resource> g_BackBuffers[g_NumFrames];
-
-//Synchronization
-ComPtr<ID3D12Fence> g_Fence;
-
-uint64_t g_FenceValue = 0;
-uint64_t g_FrameFenceValues[g_NumFrames] = {};
-HANDLE g_FenceEvent;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -80,7 +59,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 
 	if (registerResult == 0)
 	{
-		OutputDebugString(L"Failed to register Windowclass.");
+		runtimeLogger.Error("Failed to register Windowclass.");
 		return EXIT_FAILURE;
 	}
 
@@ -115,11 +94,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 	if (g_WindowHandle == nullptr)
 	{
 		//see: https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes
-		uint32_t errorCode = GetLastError();
+		//fix later
+		
+		/*uint32_t errorCode = GetLastError();
 		std::wstring errorMessage = L"Error creating Window. Errorcode: ";
 		errorMessage += std::to_wstring(errorCode);
-		OutputDebugString(errorMessage.c_str());
+		OutputDebugString(errorMessage.c_str());*/
 
+		runtimeLogger.Error("Error creating Window.");
 		return EXIT_FAILURE;
 	}
 
@@ -155,6 +137,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 	}
 
 	DestroyWindow(g_WindowHandle);
+
+	directx12::runtime::ReportLiveObjects();
+
 	return EXIT_SUCCESS;
 }
 

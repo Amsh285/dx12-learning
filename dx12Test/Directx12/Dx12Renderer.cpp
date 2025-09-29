@@ -14,6 +14,7 @@ namespace directx12
 	{
 		m_backBuffers.resize(m_frameCount);
 		m_rtvHandles.resize(m_frameCount);
+		m_commandAllocators.resize(m_frameCount);
 	}
 
 	Dx12RendererSetupResult Dx12Renderer::Setup()
@@ -55,6 +56,29 @@ namespace directx12
 			return result;
 		}
 
+		result = CreateCommandAllocators();
+
+		if (result.status != Dx12ResultCode::Success)
+		{
+			logger.Error("Failed to create CommandAllocators. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			return result;
+		}
+
+		result = CreateGraphicsCommandList();
+
+		if (result.status != Dx12ResultCode::Success)
+		{
+			logger.Error("Failed to create GraphicsCommandList. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			return result;
+		}
+
+		result = CreateFence();
+
+		if (result.status != Dx12ResultCode::Success)
+		{
+			logger.Error("Failed to create Fence. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			return result;
+		}
 
 		logger.Info("Dx12Renderer initialization complete.");
 		return {};
@@ -137,7 +161,7 @@ namespace directx12
 		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
 		HRESULT hr = runtime::g_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_rtvDescriptorHeap));
-		
+
 		if (FAILED(hr))
 			return { Dx12RendererSetupContext::CreateRTVDescriptorHeap, Dx12ResultCode::CreateDescriptorHeapFailed, hr };
 
@@ -161,6 +185,53 @@ namespace directx12
 			m_rtvHandles[i] = rtvHandle;
 			rtvHandle.ptr += rtvDescriptorSize;
 		}
+
+		return {};
+	}
+
+	Dx12RendererSetupResult Dx12Renderer::CreateCommandAllocators()
+	{
+		for (size_t i = 0; i < m_frameCount; i++)
+		{
+			HRESULT hr = runtime::g_device->CreateCommandAllocator(
+				D3D12_COMMAND_LIST_TYPE_DIRECT,
+				IID_PPV_ARGS(m_commandAllocators[i].GetAddressOf())
+			);
+
+			if (FAILED(hr))
+				return { Dx12RendererSetupContext::CreateCommandAllocators, Dx12ResultCode::CreateCommandAllocatorFailed, hr };
+		}
+
+		return {};
+	}
+
+	Dx12RendererSetupResult Dx12Renderer::CreateGraphicsCommandList()
+	{
+		HRESULT hr = runtime::g_device->CreateCommandList(
+			0,
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			m_commandAllocators[0].Get(),
+			nullptr,
+			IID_PPV_ARGS(&m_graphicsCommandList)
+		);
+
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::CreateCommandListFailed, hr };
+
+		hr = m_graphicsCommandList->Close();
+
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::GraphicsCommandListCloseFailed, hr };
+
+		return {};
+	}
+
+	Dx12RendererSetupResult Dx12Renderer::CreateFence()
+	{
+		HRESULT hr = runtime::g_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+
+		if (FAILED(hr))
+			return { Dx12RendererSetupContext::CreateFence, Dx12ResultCode::CreateFenceFailed, hr };
 
 		return {};
 	}
