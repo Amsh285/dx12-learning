@@ -14,7 +14,8 @@ namespace directx12
 		UpdateRenderTargetViews,
 		CreateCommandAllocators,
 		CreateGraphicsCommandList,
-		CreateFence
+		CreateFence,
+		CreateEventHandle
 	};
 
 	struct Dx12RendererSetupResult
@@ -30,6 +31,7 @@ namespace directx12
 		Dx12Renderer(const windows::WindowData& windowData);
 
 		Dx12RendererSetupResult Setup();
+		void Render();
 	private:
 		Dx12RendererSetupResult CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
 		Dx12RendererSetupResult CreateSwapChain();
@@ -38,8 +40,13 @@ namespace directx12
 		Dx12RendererSetupResult CreateCommandAllocators();
 		Dx12RendererSetupResult CreateGraphicsCommandList();
 		Dx12RendererSetupResult CreateFence();
+		bool CreateEventHandle();
+
+		uint64_t Signal(uint64_t& fenceValue);
+		void WaitForFenceValue(uint64_t fenceValue) const;
 
 		UINT m_frameCount = 3;
+		UINT m_currentBackBufferIndex = 0;
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_backBuffers;
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_rtvHandles;
 		std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> m_commandAllocators;
@@ -50,6 +57,7 @@ namespace directx12
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_graphicsCommandList;
 
 		Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
+		HANDLE m_fenceEvent;
 
 		windows::WindowData m_windowData;
 	};

@@ -20,7 +20,6 @@ namespace directx12
 	Dx12RendererSetupResult Dx12Renderer::Setup()
 	{
 		using namespace directx12::runtime;
-
 		Logger logger("Dx12Renderer");
 		logger.Info("Initializing Dx12Renderer.");
 
@@ -80,8 +79,26 @@ namespace directx12
 			return result;
 		}
 
+		if (!CreateEventHandle())
+		{
+			result = { Dx12RendererSetupContext::CreateEventHandle, Dx12ResultCode::UnknownError, E_FAIL };
+			logger.Error("Failed to create EventHandle. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			return result;
+		}
+
 		logger.Info("Dx12Renderer initialization complete.");
 		return {};
+	}
+
+	void Dx12Renderer::Render()
+	{
+		ComPtr<ID3D12CommandAllocator> currentCommandAllocator = m_commandAllocators[m_currentBackBufferIndex];
+		ComPtr<ID3D12Resource> currentBackBuffer = m_backBuffers[m_currentBackBufferIndex];
+
+		assert(currentCommandAllocator);
+		assert(currentBackBuffer);
+
+
 	}
 
 	Dx12RendererSetupResult Dx12Renderer::CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type)
@@ -234,5 +251,41 @@ namespace directx12
 			return { Dx12RendererSetupContext::CreateFence, Dx12ResultCode::CreateFenceFailed, hr };
 
 		return {};
+	}
+
+	bool Dx12Renderer::CreateEventHandle()
+	{
+		m_fenceEvent = CreateEventExW(NULL, FALSE, FALSE, NULL);
+		return m_fenceEvent != nullptr;
+	}
+
+	uint64_t Dx12Renderer::Signal(uint64_t& fenceValue)
+	{
+		uint64_t fenceValueForSignal = ++fenceValue;
+		ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), fenceValueForSignal));
+
+		return fenceValueForSignal;
+	}
+
+	void Dx12Renderer::WaitForFenceValue(uint64_t fenceValue) const
+	{
+		ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
+
+		size_t retryCount = 0;
+		const size_t maxRetries = 3;
+		DWORD result = 0;
+
+		do
+		{
+			++retryCount;
+			result = WaitForSingleObject(m_fenceEvent, 2000);
+
+			if (result == WAIT_FAILED)
+				throw std::runtime_error("Failed to wait for Fence event.");
+
+		} while (result != WAIT_OBJECT_0 && retryCount < maxRetries);
+		
+		if (result == WAIT_TIMEOUT)
+			throw std::runtime_error("Failed to wait for Fence event. Timeout period elapsed.");
 	}
 }

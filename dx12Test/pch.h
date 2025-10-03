@@ -53,9 +53,4 @@ inline void ThrowIfFailed(HRESULT hr)
         throw std::exception();
 }
 
-
-inline void ThrowIfFailed(HRESULT hr, const std::string& errormsg)
-{
-    if (FAILED(hr))
-        throw std::exception(errormsg.c_str());
-}
+#define NOOP() ((void)0)
