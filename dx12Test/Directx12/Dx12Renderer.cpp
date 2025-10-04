@@ -1,8 +1,6 @@
 #include "pch.h"
 
 #include "Dx12Renderer.h"
-#include "Logger.h"
-
 #include "Runtime/Dx12Runtime.h"
 
 using namespace Microsoft::WRL;
@@ -10,24 +8,30 @@ using namespace Microsoft::WRL;
 namespace directx12
 {
 	Dx12Renderer::Dx12Renderer(const windows::WindowData& windowData)
-		: m_windowData(windowData)
+		: m_windowData(windowData), m_logger([]() {
+		static std::atomic<uint32_t> s_rendererInstance = 0;
+		uint32_t id = s_rendererInstance.fetch_add(1);
+
+		return  std::string("Dx12Renderer#") + std::to_string(id);
+			}())
 	{
 		m_backBuffers.resize(m_frameCount);
 		m_rtvHandles.resize(m_frameCount);
 		m_commandAllocators.resize(m_frameCount);
+		m_frameFenceValues.resize(m_frameCount);
 	}
 
 	Dx12RendererSetupResult Dx12Renderer::Setup()
 	{
 		using namespace directx12::runtime;
-		Logger logger("Dx12Renderer");
-		logger.Info("Initializing Dx12Renderer.");
+
+		m_logger.Info("Initializing Dx12Renderer.");
 
 		Dx12RendererSetupResult result = CreateCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			logger.Error("Failed to create CommandQueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create CommandQueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 			return result;
 		}
 
@@ -35,7 +39,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			logger.Error("Failed to create SwapChain. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create SwapChain. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 			return result;
 		}
 
@@ -43,7 +47,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			logger.Error("Failed to create RTVDescriptorheap. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create RTVDescriptorheap. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 			return result;
 		}
 
@@ -51,7 +55,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			logger.Error("Failed to create RenderTargetViews. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create RenderTargetViews. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 			return result;
 		}
 
@@ -59,7 +63,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			logger.Error("Failed to create CommandAllocators. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create CommandAllocators. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 			return result;
 		}
 
@@ -67,26 +71,26 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			logger.Error("Failed to create GraphicsCommandList. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create GraphicsCommandList. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
 			return result;
 		}
 
-		result = CreateFence();
+		Dx12FenceSetupResult fenceSetupResult = m_fence.Setup(m_commandQueue);
 
-		if (result.status != Dx12ResultCode::Success)
+		if (fenceSetupResult.status != Dx12ResultCode::Success)
 		{
-			logger.Error("Failed to create Fence. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
-			return result;
+			switch (fenceSetupResult.context)
+			{
+			case Dx12FenceSetupContext::CreateFence:
+				return { Dx12RendererSetupContext::CreateFence, fenceSetupResult.status, fenceSetupResult.code };
+			case Dx12FenceSetupContext::CreateEventHandle:
+				return { Dx12RendererSetupContext::CreateEventHandle, fenceSetupResult.status, fenceSetupResult.code };
+			default:
+				throw std::runtime_error("");
+			}
 		}
 
-		if (!CreateEventHandle())
-		{
-			result = { Dx12RendererSetupContext::CreateEventHandle, Dx12ResultCode::UnknownError, E_FAIL };
-			logger.Error("Failed to create EventHandle. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
-			return result;
-		}
-
-		logger.Info("Dx12Renderer initialization complete.");
+		m_logger.Info("Dx12Renderer initialization complete.");
 		return {};
 	}
 
@@ -241,51 +245,5 @@ namespace directx12
 			return { Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::GraphicsCommandListCloseFailed, hr };
 
 		return {};
-	}
-
-	Dx12RendererSetupResult Dx12Renderer::CreateFence()
-	{
-		HRESULT hr = runtime::g_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateFence, Dx12ResultCode::CreateFenceFailed, hr };
-
-		return {};
-	}
-
-	bool Dx12Renderer::CreateEventHandle()
-	{
-		m_fenceEvent = CreateEventExW(NULL, FALSE, FALSE, NULL);
-		return m_fenceEvent != nullptr;
-	}
-
-	uint64_t Dx12Renderer::Signal(uint64_t& fenceValue)
-	{
-		uint64_t fenceValueForSignal = ++fenceValue;
-		ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), fenceValueForSignal));
-
-		return fenceValueForSignal;
-	}
-
-	void Dx12Renderer::WaitForFenceValue(uint64_t fenceValue) const
-	{
-		ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
-
-		size_t retryCount = 0;
-		const size_t maxRetries = 3;
-		DWORD result = 0;
-
-		do
-		{
-			++retryCount;
-			result = WaitForSingleObject(m_fenceEvent, 2000);
-
-			if (result == WAIT_FAILED)
-				throw std::runtime_error("Failed to wait for Fence event.");
-
-		} while (result != WAIT_OBJECT_0 && retryCount < maxRetries);
-		
-		if (result == WAIT_TIMEOUT)
-			throw std::runtime_error("Failed to wait for Fence event. Timeout period elapsed.");
 	}
 }
