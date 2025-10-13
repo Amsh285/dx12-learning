@@ -45,6 +45,7 @@ namespace directx12
 		Dx12RendererSetupResult CreateCommandAllocators();
 		Dx12RendererSetupResult CreateGraphicsCommandList();
 
+		bool m_vSync = true;
 		UINT m_frameCount = 3;
 		UINT m_currentBackBufferIndex = 0;
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_backBuffers;
@@ -54,7 +55,7 @@ namespace directx12
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
 		Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvDescriptorHeap;
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_graphicsCommandList;
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
 
 		Dx12Fence m_fence;
 		std::vector<uint64_t> m_frameFenceValues;

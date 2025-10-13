@@ -133,6 +133,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 		else
 		{
 			//update here
+			renderer.Render();
 		}
 	}
 

@@ -102,7 +102,54 @@ namespace directx12
 		assert(currentCommandAllocator);
 		assert(currentBackBuffer);
 
+		ThrowIfFailed(currentCommandAllocator->Reset());
+		ThrowIfFailed(m_commandList->Reset(currentCommandAllocator.Get(), nullptr));
 
+		{
+			D3D12_RESOURCE_BARRIER barrier = {};
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource = currentBackBuffer.Get();
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+			m_commandList->ResourceBarrier(1, &barrier);
+
+			FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
+			D3D12_CPU_DESCRIPTOR_HANDLE currentRtvHandle = m_rtvHandles[m_currentBackBufferIndex];
+
+			m_commandList->ClearRenderTargetView(currentRtvHandle, clearColor, 0, nullptr);
+		}
+
+		{
+			D3D12_RESOURCE_BARRIER barrier = {};
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource = currentBackBuffer.Get();
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+			m_commandList->ResourceBarrier(1, &barrier);
+			ThrowIfFailed(m_commandList->Close());
+
+			ID3D12CommandList* const commandLists[] = {
+				m_commandList.Get()
+			};
+
+			m_commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+
+			UINT syncInterval = m_vSync ? 1 : 0;
+			UINT PresentFlags = runtime::g_tearingSupported && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+			ThrowIfFailed(m_swapChain->Present(syncInterval, PresentFlags));
+
+			m_frameFenceValues[m_currentBackBufferIndex] = m_fence.Signal();
+
+			m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
+			m_fence.WaitCpu(m_frameFenceValues[m_currentBackBufferIndex]);
+		}
 	}
 
 	Dx12RendererSetupResult Dx12Renderer::CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type)
@@ -233,13 +280,13 @@ namespace directx12
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			m_commandAllocators[0].Get(),
 			nullptr,
-			IID_PPV_ARGS(&m_graphicsCommandList)
+			IID_PPV_ARGS(&m_commandList)
 		);
 
 		if (FAILED(hr))
 			return { Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::CreateCommandListFailed, hr };
 
-		hr = m_graphicsCommandList->Close();
+		hr = m_commandList->Close();
 
 		if (FAILED(hr))
 			return { Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::GraphicsCommandListCloseFailed, hr };

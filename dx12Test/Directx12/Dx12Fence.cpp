@@ -116,7 +116,7 @@ namespace directx12
 
 	bool Dx12Fence::CreateEventHandle()
 	{
-		m_fenceEvent = CreateEventExW(NULL, FALSE, FALSE, NULL);
+		m_fenceEvent = CreateEventExW(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
 		return m_fenceEvent != nullptr;
 	}
 }
