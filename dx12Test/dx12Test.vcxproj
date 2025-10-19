@@ -90,6 +90,7 @@
     <ClCompile Include="Directx12\Runtime\Dx12Runtime.cpp" />
     <ClCompile Include="Directx12\Runtime\Dx12Setup.cpp" />
     <ClCompile Include="Directx12\Dx12Fence.cpp" />
+    <ClCompile Include="Directx12\Dx12SwapChain.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
@@ -104,6 +105,7 @@
     <ClInclude Include="Directx12\Runtime\Dx12Runtime.h" />
     <ClInclude Include="Directx12\Runtime\Dx12Setup.h" />
     <ClInclude Include="Directx12\Dx12Fence.h" />
+    <ClInclude Include="Directx12\Dx12SwapChain.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Windows\WindowData.h" />

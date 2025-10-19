@@ -4,6 +4,31 @@
 
 #include "Runtime/Dx12Runtime.h"
 
+// ============================================================================
+//  CPU / GPU Synchronization Summary (Direct3D 12)
+// ============================================================================
+//  Side | Function(s)                                      | Description
+// ------+--------------------------------------------------+----------------------------------------------
+//  CPU  | ID3D12Fence::Signal(value)                       | Sets the fence value immediately (CPU side).
+//       |                                                  | Used to let the GPU know the CPU is ready.
+// ------+--------------------------------------------------+----------------------------------------------
+//  GPU  | ID3D12CommandQueue::Signal(fence, value)          | Signals the fence once GPU commands complete.
+//       |                                                  | Used to notify the CPU that the GPU is done.
+// ------+--------------------------------------------------+----------------------------------------------
+//  CPU  | ID3D12Fence::SetEventOnCompletion(value, event)   | CPU waits until the fence reaches the value.
+//       | WaitForSingleObject(event, INFINITE)              | Typical way for CPU to wait for GPU completion.
+// ------+--------------------------------------------------+----------------------------------------------
+//  GPU  | ID3D12CommandQueue::Wait(fence, value)            | GPU waits until the fence reaches the value.
+//       |                                                  | Useful when GPU must wait for CPU or another queue.
+// ============================================================================
+//  Summary:
+//    - CPU -> GPU sync:   fence->Signal()  +  queue->Wait()
+//    - GPU -> CPU sync:   queue->Signal()  +  fence->SetEventOnCompletion()
+// Resources see: https://www.3dgep.com/learning-directx-12-1/#create-a-fence
+// ============================================================================
+
+
+
 namespace directx12
 {
 	Dx12Fence::Dx12Fence()
