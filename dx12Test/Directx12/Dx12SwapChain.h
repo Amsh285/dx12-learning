@@ -29,7 +29,7 @@ namespace directx12
 		UINT GetCurrentBackBufferIndex() const { return m_currentBackBufferIndex; }
 
 		ID3D12Resource* GetCurrentBackBuffer() const noexcept { return m_backBuffers[m_currentBackBufferIndex].Get(); }
-		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTVHandle() const { return m_rtvHandles[m_currentBackBufferIndex]; }
+		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTVHandle() const noexcept { return m_rtvHandles[m_currentBackBufferIndex]; }
 
 		Dx12SwapChain();
 		Dx12SwapChain(UINT bufferCount, bool vSync);
