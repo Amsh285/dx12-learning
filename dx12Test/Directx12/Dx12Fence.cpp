@@ -118,17 +118,32 @@ namespace directx12
 			*/
 
 			/*
-			#ifdef _DEBUG
-				constexpr DWORD waitTimeout = 5000; // 5 seconds in debug
-			#else
-				constexpr DWORD waitTimeout = INFINITE; // Release: wait forever
-			#endif
-
-			DWORD result = WaitForSingleObject(m_fenceEvent, waitTimeout);
-			if (result != WAIT_OBJECT_0)
+			void Dx12Fence::WaitCpu(uint64_t fenceValue) const
 			{
-				m_logger.Error("Failed to wait for Fence event. Result: {0}", result);
-				throw std::runtime_error("Fence wait failed or timed out.");
+				if (m_fence->GetCompletedValue() >= fenceValue)
+					return;
+
+				// Ensure the event will be signaled when the fence reaches the value
+				ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
+
+				#ifdef _DEBUG
+					constexpr DWORD waitTimeout = 5000; // 5 seconds in debug builds
+				#else
+					constexpr DWORD waitTimeout = INFINITE; // Wait indefinitely in release builds
+				#endif
+
+				DWORD result = WaitForSingleObject(m_fenceEvent, waitTimeout);
+
+				if (result == WAIT_FAILED)
+				{
+					m_logger.Error("Failed to wait for Fence event.");
+					throw std::runtime_error("Failed to wait for Fence event.");
+				}
+				else if (result == WAIT_TIMEOUT)
+				{
+					m_logger.Error("Fence wait timed out. Fence value: {0}", fenceValue);
+					throw std::runtime_error("Fence wait timed out.");
+				}
 			}
 			*/
 			++retryCount;
