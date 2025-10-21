@@ -23,7 +23,6 @@ namespace directx12
 	{
 		m_backBuffers.resize(m_bufferCount);
 		m_rtvHandles.resize(m_bufferCount);
-		m_frameFenceValues.resize(m_bufferCount);
 	}
 
 	Dx12SetupSwapChainResult Dx12SwapChain::Setup(const ComPtr<ID3D12CommandQueue>& commandQueue, const windows::WindowData& windowData)
@@ -58,6 +57,19 @@ namespace directx12
 		}
 
 		return {};
+	}
+
+	void Dx12SwapChain::Present()
+	{
+		UINT syncInterval = m_vSync ? 1 : 0;
+		UINT PresentFlags = runtime::g_tearingSupported && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+		ThrowIfFailed(m_swapChain->Present(syncInterval, PresentFlags));
+	}
+
+	void Dx12SwapChain::UpdateBackBufferIndex()
+	{
+		m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 	}
 
 	Dx12SetupSwapChainResult Dx12SwapChain::CreateSwapChain()

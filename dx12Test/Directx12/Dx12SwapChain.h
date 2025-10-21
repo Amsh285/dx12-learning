@@ -26,15 +26,20 @@ namespace directx12
 	{
 	public:
 		UINT GetBufferCount() const { return m_bufferCount; }
+		UINT GetCurrentBackBufferIndex() const { return m_currentBackBufferIndex; }
+
+		ID3D12Resource* GetCurrentBackBuffer() const noexcept { return m_backBuffers[m_currentBackBufferIndex].Get(); }
+		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTVHandle() const { return m_rtvHandles[m_currentBackBufferIndex]; }
 
 		Dx12SwapChain();
 		Dx12SwapChain(UINT bufferCount, bool vSync);
 		~Dx12SwapChain();
-
 		void Release();
 
 		Dx12SetupSwapChainResult Setup(const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue, const windows::WindowData& windowData);
 
+		void Present();
+		void UpdateBackBufferIndex();
 	private:
 		Dx12SetupSwapChainResult CreateSwapChain();
 		Dx12SetupSwapChainResult CreateRTVDescriptorHeap();
@@ -46,8 +51,6 @@ namespace directx12
 
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_backBuffers;
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_rtvHandles;
-		
-		std::vector<uint64_t> m_frameFenceValues;
 
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
 		Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;

@@ -5,6 +5,8 @@
 
 using namespace Microsoft::WRL;
 
+constexpr UINT m_frameInFlightCount = 3;
+
 namespace directx12
 {
 	Dx12Renderer::Dx12Renderer()
@@ -16,6 +18,7 @@ namespace directx12
 			}())
 	{
 		m_commandAllocators.resize(m_frameCount);
+		m_frameFenceValues.resize(m_frameCount);
 	}
 
 	Dx12RendererSetupResult Dx12Renderer::Setup(const windows::WindowData& windowData)
@@ -65,8 +68,10 @@ namespace directx12
 
 	void Dx12Renderer::Render()
 	{
-		ComPtr<ID3D12CommandAllocator> currentCommandAllocator = m_commandAllocators[m_currentBackBufferIndex];
-		ComPtr<ID3D12Resource> currentBackBuffer = m_backBuffers[m_currentBackBufferIndex];
+		UINT currentBackBufferIndex = m_swapChain.GetCurrentBackBufferIndex();
+
+		ComPtr<ID3D12CommandAllocator> currentCommandAllocator = m_commandAllocators[currentBackBufferIndex];
+		ComPtr<ID3D12Resource> currentBackBuffer = m_swapChain.GetCurrentBackBuffer();
 
 		assert(currentCommandAllocator);
 		assert(currentBackBuffer);
@@ -86,7 +91,7 @@ namespace directx12
 			m_commandList->ResourceBarrier(1, &barrier);
 
 			FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
-			D3D12_CPU_DESCRIPTOR_HANDLE currentRtvHandle = m_rtvHandles[m_currentBackBufferIndex];
+			D3D12_CPU_DESCRIPTOR_HANDLE currentRtvHandle = m_swapChain.GetCurrentRTVHandle();
 
 			m_commandList->ClearRenderTargetView(currentRtvHandle, clearColor, 0, nullptr);
 		}
@@ -108,16 +113,11 @@ namespace directx12
 			};
 
 			m_commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+			m_swapChain.Present();
+			m_frameFenceValues[currentBackBufferIndex] = m_fence.Signal();
 
-			UINT syncInterval = m_vSync ? 1 : 0;
-			UINT PresentFlags = runtime::g_tearingSupported && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
-
-			ThrowIfFailed(m_swapChain->Present(syncInterval, PresentFlags));
-
-			m_frameFenceValues[m_currentBackBufferIndex] = m_fence.Signal();
-
-			m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
-			m_fence.WaitCpu(m_frameFenceValues[m_currentBackBufferIndex]);
+			m_swapChain.UpdateBackBufferIndex();
+			m_fence.WaitCpu(m_frameFenceValues[currentBackBufferIndex]);
 		}
 	}
 

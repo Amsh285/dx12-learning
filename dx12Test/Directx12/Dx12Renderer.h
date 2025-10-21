@@ -42,13 +42,15 @@ namespace directx12
 
 		UINT m_frameCount = 3;
 
+		std::vector<uint64_t> m_frameFenceValues;
+
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
 		
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
 		std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> m_commandAllocators;
 
 		Dx12SwapChain m_swapChain;
-		Dx12Fence m_fence;
+		Dx12Fence m_fence;    
 
 		Logger m_logger;
 	};
