@@ -105,6 +105,32 @@ namespace directx12
 
 		do
 		{
+			// Todo: maybe just use INFINITE. Look into this later.
+			/*
+				ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
+				DWORD result = WaitForSingleObject(m_fenceEvent, INFINITE);
+
+				if (result != WAIT_OBJECT_0)
+				{
+					m_logger.Error("Failed to wait for Fence event.");
+					throw std::runtime_error("Failed to wait for Fence event.");
+				}
+			*/
+
+			/*
+			#ifdef _DEBUG
+				constexpr DWORD waitTimeout = 5000; // 5 seconds in debug
+			#else
+				constexpr DWORD waitTimeout = INFINITE; // Release: wait forever
+			#endif
+
+			DWORD result = WaitForSingleObject(m_fenceEvent, waitTimeout);
+			if (result != WAIT_OBJECT_0)
+			{
+				m_logger.Error("Failed to wait for Fence event. Result: {0}", result);
+				throw std::runtime_error("Fence wait failed or timed out.");
+			}
+			*/
 			++retryCount;
 			result = WaitForSingleObject(m_fenceEvent, 2000);
 
