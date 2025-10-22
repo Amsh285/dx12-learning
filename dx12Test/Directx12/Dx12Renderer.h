@@ -2,6 +2,7 @@
 
 #include "Dx12ResultCode.h"
 #include "Dx12Fence.h"
+#include "Dx12SwapChain.h"
 
 #include "Logger.h"
 #include "Windows/WindowData.h"
@@ -12,13 +13,10 @@ namespace directx12
 	{
 		Undefined,
 		CreateCommandQueue,
-		CreateSwapChain,
-		CreateRTVDescriptorHeap,
-		UpdateRenderTargetViews,
+		SetupInternalSwapChainStructure,
 		CreateCommandAllocators,
 		CreateGraphicsCommandList,
-		CreateFence,
-		CreateEventHandle
+		SetupInternalFenceStructure
 	};
 
 	struct Dx12RendererSetupResult
@@ -31,36 +29,29 @@ namespace directx12
 	class Dx12Renderer
 	{
 	public:
-		Dx12Renderer(const windows::WindowData& windowData);
+		Dx12Renderer();
 
-		Dx12RendererSetupResult Setup();
+		Dx12RendererSetupResult Setup(const windows::WindowData& windowData);
 
 		void Render();
 		void Flush();
 	private:
 		Dx12RendererSetupResult CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
-		Dx12RendererSetupResult CreateSwapChain();
-		Dx12RendererSetupResult CreateRTVDescriptorHeap();
-		Dx12RendererSetupResult UpdateRenderTargetViews();
 		Dx12RendererSetupResult CreateCommandAllocators();
 		Dx12RendererSetupResult CreateGraphicsCommandList();
 
-		bool m_vSync = true;
 		UINT m_frameCount = 3;
-		UINT m_currentBackBufferIndex = 0;
-		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> m_backBuffers;
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_rtvHandles;
-		std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> m_commandAllocators;
 
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
-		Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvDescriptorHeap;
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
-
-		Dx12Fence m_fence;
 		std::vector<uint64_t> m_frameFenceValues;
 
-		windows::WindowData m_windowData;
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+		
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList;
+		std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>> m_commandAllocators;
+
+		Dx12SwapChain m_swapChain;
+		Dx12Fence m_fence;    
+
 		Logger m_logger;
 	};
 }

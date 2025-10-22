@@ -5,23 +5,23 @@
 
 using namespace Microsoft::WRL;
 
+constexpr UINT m_frameInFlightCount = 3;
+
 namespace directx12
 {
-	Dx12Renderer::Dx12Renderer(const windows::WindowData& windowData)
-		: m_windowData(windowData), m_logger([]() {
+	Dx12Renderer::Dx12Renderer()
+		: m_logger([]() {
 		static std::atomic<uint32_t> s_rendererInstance = 0;
 		uint32_t id = s_rendererInstance.fetch_add(1);
 
 		return  std::string("Dx12Renderer#") + std::to_string(id);
 			}())
 	{
-		m_backBuffers.resize(m_frameCount);
-		m_rtvHandles.resize(m_frameCount);
 		m_commandAllocators.resize(m_frameCount);
 		m_frameFenceValues.resize(m_frameCount);
 	}
 
-	Dx12RendererSetupResult Dx12Renderer::Setup()
+	Dx12RendererSetupResult Dx12Renderer::Setup(const windows::WindowData& windowData)
 	{
 		using namespace directx12::runtime;
 
@@ -35,29 +35,11 @@ namespace directx12
 			return result;
 		}
 
-		result = CreateSwapChain();
+		Dx12SetupSwapChainResult swapChainSetupResult = m_swapChain.Setup(m_commandQueue, windowData);
 
-		if (result.status != Dx12ResultCode::Success)
-		{
-			m_logger.Error("Failed to create SwapChain. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
-			return result;
-		}
-
-		result = CreateRTVDescriptorHeap();
-
-		if (result.status != Dx12ResultCode::Success)
-		{
-			m_logger.Error("Failed to create RTVDescriptorheap. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
-			return result;
-		}
-
-		result = UpdateRenderTargetViews();
-
-		if (result.status != Dx12ResultCode::Success)
-		{
-			m_logger.Error("Failed to create RenderTargetViews. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
-			return result;
-		}
+		// probably another subcontext needed (create swapchain, rtvdescriptorheap etc...)
+		if (swapChainSetupResult.status != Dx12ResultCode::Success)
+			return { Dx12RendererSetupContext::SetupInternalSwapChainStructure, swapChainSetupResult.status, swapChainSetupResult.code };
 
 		result = CreateCommandAllocators();
 
@@ -78,17 +60,7 @@ namespace directx12
 		Dx12FenceSetupResult fenceSetupResult = m_fence.Setup(m_commandQueue);
 
 		if (fenceSetupResult.status != Dx12ResultCode::Success)
-		{
-			switch (fenceSetupResult.context)
-			{
-			case Dx12FenceSetupContext::CreateFence:
-				return { Dx12RendererSetupContext::CreateFence, fenceSetupResult.status, fenceSetupResult.code };
-			case Dx12FenceSetupContext::CreateEventHandle:
-				return { Dx12RendererSetupContext::CreateEventHandle, fenceSetupResult.status, fenceSetupResult.code };
-			default:
-				throw std::runtime_error("");
-			}
-		}
+			return { Dx12RendererSetupContext::SetupInternalFenceStructure, fenceSetupResult.status, fenceSetupResult.code };
 
 		m_logger.Info("Dx12Renderer initialization complete.");
 		return {};
@@ -96,8 +68,10 @@ namespace directx12
 
 	void Dx12Renderer::Render()
 	{
-		ComPtr<ID3D12CommandAllocator> currentCommandAllocator = m_commandAllocators[m_currentBackBufferIndex];
-		ComPtr<ID3D12Resource> currentBackBuffer = m_backBuffers[m_currentBackBufferIndex];
+		UINT currentBackBufferIndex = m_swapChain.GetCurrentBackBufferIndex();
+
+		ComPtr<ID3D12CommandAllocator> currentCommandAllocator = m_commandAllocators[currentBackBufferIndex];
+		ComPtr<ID3D12Resource> currentBackBuffer = m_swapChain.GetCurrentBackBuffer();
 
 		assert(currentCommandAllocator);
 		assert(currentBackBuffer);
@@ -117,7 +91,7 @@ namespace directx12
 			m_commandList->ResourceBarrier(1, &barrier);
 
 			FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
-			D3D12_CPU_DESCRIPTOR_HANDLE currentRtvHandle = m_rtvHandles[m_currentBackBufferIndex];
+			D3D12_CPU_DESCRIPTOR_HANDLE currentRtvHandle = m_swapChain.GetCurrentRTVHandle();
 
 			m_commandList->ClearRenderTargetView(currentRtvHandle, clearColor, 0, nullptr);
 		}
@@ -139,16 +113,11 @@ namespace directx12
 			};
 
 			m_commandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+			m_swapChain.Present();
+			m_frameFenceValues[currentBackBufferIndex] = m_fence.Signal();
 
-			UINT syncInterval = m_vSync ? 1 : 0;
-			UINT PresentFlags = runtime::g_tearingSupported && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
-
-			ThrowIfFailed(m_swapChain->Present(syncInterval, PresentFlags));
-
-			m_frameFenceValues[m_currentBackBufferIndex] = m_fence.Signal();
-
-			m_currentBackBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
-			m_fence.WaitCpu(m_frameFenceValues[m_currentBackBufferIndex]);
+			m_swapChain.UpdateBackBufferIndex();
+			m_fence.WaitCpu(m_frameFenceValues[currentBackBufferIndex]);
 		}
 	}
 
@@ -164,95 +133,6 @@ namespace directx12
 
 		if (FAILED(hr))
 			return { Dx12RendererSetupContext::CreateCommandQueue, Dx12ResultCode::CreateCommandQueueFailed, hr };
-
-		return {};
-	}
-
-	Dx12RendererSetupResult Dx12Renderer::CreateSwapChain()
-	{
-		ComPtr<IDXGIFactory4> dxgiFactory4;
-		UINT createFactoryFlags = 0;
-
-#if defined(_DEBUG)
-		createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
-#endif
-
-		HRESULT hr = CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory4));
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::CreateDXGIFactoryFailed, hr };
-
-		DXGI_SWAP_CHAIN_DESC1 desc = {};
-		desc.Width = m_windowData.clientWidth;
-		desc.Height = m_windowData.clientHeight;
-		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		desc.Stereo = FALSE;
-		desc.SampleDesc = { 1, 0 };
-		desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		desc.BufferCount = m_frameCount;
-		desc.Scaling = DXGI_SCALING_STRETCH;
-		desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-		desc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-		desc.Flags = runtime::g_tearingSupported ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
-
-		ComPtr<IDXGISwapChain1> swapChain1;
-		hr = dxgiFactory4->CreateSwapChainForHwnd(
-			m_commandQueue.Get(),
-			m_windowData.windowHandle,
-			&desc,
-			nullptr,
-			nullptr,
-			&swapChain1
-		);
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::CreateSwapChainFailed, hr };
-
-		hr = dxgiFactory4->MakeWindowAssociation(m_windowData.windowHandle, DXGI_MWA_NO_ALT_ENTER);
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::MakeWindowAssociationFailed, hr };
-
-		hr = swapChain1.As(&m_swapChain);
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateSwapChain, Dx12ResultCode::ComInterfaceCastFailed, hr };
-
-		return {};
-	}
-
-	Dx12RendererSetupResult Dx12Renderer::CreateRTVDescriptorHeap()
-	{
-		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-		desc.NumDescriptors = m_frameCount;
-		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-		HRESULT hr = runtime::g_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_rtvDescriptorHeap));
-
-		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateRTVDescriptorHeap, Dx12ResultCode::CreateDescriptorHeapFailed, hr };
-
-		return {};
-	}
-
-	Dx12RendererSetupResult Dx12Renderer::UpdateRenderTargetViews()
-	{
-		UINT rtvDescriptorSize = runtime::g_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-
-		for (size_t i = 0; i < m_frameCount; ++i)
-		{
-			HRESULT hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_backBuffers[i].GetAddressOf()));
-
-			if (FAILED(hr))
-				return { Dx12RendererSetupContext::UpdateRenderTargetViews, Dx12ResultCode::CreateBufferFailed, hr };
-
-			runtime::g_device->CreateRenderTargetView(m_backBuffers[i].Get(), nullptr, rtvHandle);
-
-			m_rtvHandles[i] = rtvHandle;
-			rtvHandle.ptr += rtvDescriptorSize;
-		}
 
 		return {};
 	}

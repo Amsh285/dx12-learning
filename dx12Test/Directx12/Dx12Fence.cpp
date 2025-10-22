@@ -4,6 +4,31 @@
 
 #include "Runtime/Dx12Runtime.h"
 
+// ============================================================================
+//  CPU / GPU Synchronization Summary (Direct3D 12)
+// ============================================================================
+//  Side | Function(s)                                      | Description
+// ------+--------------------------------------------------+----------------------------------------------
+//  CPU  | ID3D12Fence::Signal(value)                       | Sets the fence value immediately (CPU side).
+//       |                                                  | Used to let the GPU know the CPU is ready.
+// ------+--------------------------------------------------+----------------------------------------------
+//  GPU  | ID3D12CommandQueue::Signal(fence, value)          | Signals the fence once GPU commands complete.
+//       |                                                  | Used to notify the CPU that the GPU is done.
+// ------+--------------------------------------------------+----------------------------------------------
+//  CPU  | ID3D12Fence::SetEventOnCompletion(value, event)   | CPU waits until the fence reaches the value.
+//       | WaitForSingleObject(event, INFINITE)              | Typical way for CPU to wait for GPU completion.
+// ------+--------------------------------------------------+----------------------------------------------
+//  GPU  | ID3D12CommandQueue::Wait(fence, value)            | GPU waits until the fence reaches the value.
+//       |                                                  | Useful when GPU must wait for CPU or another queue.
+// ============================================================================
+//  Summary:
+//    - CPU -> GPU sync:   fence->Signal()  +  queue->Wait()
+//    - GPU -> CPU sync:   queue->Signal()  +  fence->SetEventOnCompletion()
+// Resources see: https://www.3dgep.com/learning-directx-12-1/#create-a-fence
+// ============================================================================
+
+
+
 namespace directx12
 {
 	Dx12Fence::Dx12Fence()
@@ -80,6 +105,47 @@ namespace directx12
 
 		do
 		{
+			// Todo: maybe just use INFINITE. Look into this later.
+			/*
+				ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
+				DWORD result = WaitForSingleObject(m_fenceEvent, INFINITE);
+
+				if (result != WAIT_OBJECT_0)
+				{
+					m_logger.Error("Failed to wait for Fence event.");
+					throw std::runtime_error("Failed to wait for Fence event.");
+				}
+			*/
+
+			/*
+			void Dx12Fence::WaitCpu(uint64_t fenceValue) const
+			{
+				if (m_fence->GetCompletedValue() >= fenceValue)
+					return;
+
+				// Ensure the event will be signaled when the fence reaches the value
+				ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
+
+				#ifdef _DEBUG
+					constexpr DWORD waitTimeout = 5000; // 5 seconds in debug builds
+				#else
+					constexpr DWORD waitTimeout = INFINITE; // Wait indefinitely in release builds
+				#endif
+
+				DWORD result = WaitForSingleObject(m_fenceEvent, waitTimeout);
+
+				if (result == WAIT_FAILED)
+				{
+					m_logger.Error("Failed to wait for Fence event.");
+					throw std::runtime_error("Failed to wait for Fence event.");
+				}
+				else if (result == WAIT_TIMEOUT)
+				{
+					m_logger.Error("Fence wait timed out. Fence value: {0}", fenceValue);
+					throw std::runtime_error("Fence wait timed out.");
+				}
+			}
+			*/
 			++retryCount;
 			result = WaitForSingleObject(m_fenceEvent, 2000);
 

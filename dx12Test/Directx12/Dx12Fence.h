@@ -42,7 +42,7 @@ namespace directx12
 		Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
 
 		HANDLE m_fenceEvent;
-		uint64_t m_fenceValue;
+		std::atomic<uint64_t> m_fenceValue;
 
 		Logger m_logger;
 

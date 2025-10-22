@@ -4,8 +4,8 @@ namespace windows
 {
 	struct WindowData
 	{
-		HWND windowHandle;
-		uint32_t clientWidth;
-		uint32_t clientHeight;
+		HWND windowHandle = nullptr;
+		uint32_t clientWidth = 0;
+		uint32_t clientHeight = 0;
 	};
 }
