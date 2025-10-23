@@ -33,7 +33,7 @@ namespace directx12
 
 		Dx12SwapChain();
 		Dx12SwapChain(UINT bufferCount, bool vSync);
-		~Dx12SwapChain() = default; //Todo make real destructor
+		~Dx12SwapChain() = default;
 		void Release();
 
 		Dx12SetupSwapChainResult Setup(const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue, const windows::WindowData& windowData);
@@ -58,7 +58,5 @@ namespace directx12
 
 		windows::WindowData m_windowData;
 		Logger m_logger;
-
-		bool m_released;
 	};
 }

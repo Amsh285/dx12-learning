@@ -5,8 +5,6 @@
 
 using namespace Microsoft::WRL;
 
-constexpr UINT m_frameInFlightCount = 3;
-
 namespace directx12
 {
 	Dx12Renderer::Dx12Renderer()
@@ -17,13 +15,36 @@ namespace directx12
 		return  std::string("Dx12Renderer#") + std::to_string(id);
 			}())
 	{
-		m_commandAllocators.resize(m_frameCount);
-		m_frameFenceValues.resize(m_frameCount);
+	}
+
+	Dx12Renderer::~Dx12Renderer()
+	{
+		Release();
+	}
+
+	void Dx12Renderer::Release()
+	{
+		m_fence.Flush();
+
+		m_swapChain.Release();
+		m_fence.Release();
+
+		m_commandList.Reset();
+
+		for (auto allocator : m_commandAllocators)
+			allocator.Reset();
+
+		m_commandAllocators.clear();
+
+		m_commandQueue.Reset();
 	}
 
 	Dx12RendererSetupResult Dx12Renderer::Setup(const windows::WindowData& windowData)
 	{
 		using namespace directx12::runtime;
+
+		m_commandAllocators.resize(m_frameCount);
+		m_frameFenceValues.resize(m_frameCount);
 
 		m_logger.Info("Initializing Dx12Renderer.");
 

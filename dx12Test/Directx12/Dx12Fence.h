@@ -45,7 +45,5 @@ namespace directx12
 		std::atomic<uint64_t> m_fenceValue;
 
 		Logger m_logger;
-
-		bool m_released;
 	};
 }

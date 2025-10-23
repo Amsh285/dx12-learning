@@ -32,7 +32,7 @@
 namespace directx12
 {
 	Dx12Fence::Dx12Fence()
-		: m_fenceEvent(nullptr), m_fenceValue(0), m_released(false),
+		: m_fenceEvent(nullptr), m_fenceValue(0),
 		m_logger([]() {
 		static std::atomic<uint32_t> s_fenceInstance = 0;
 		uint32_t fenceId = s_fenceInstance.fetch_add(1);
@@ -44,14 +44,11 @@ namespace directx12
 
 	Dx12Fence::~Dx12Fence()
 	{
-		if (!m_released)
-			Release();
+		Release();
 	}
 
 	void Dx12Fence::Release()
 	{
-		m_released = true;
-
 		if (m_fenceEvent)
 		{
 			CloseHandle(m_fenceEvent);
@@ -60,7 +57,6 @@ namespace directx12
 
 		m_fence.Reset();
 		m_commandQueue.Reset();
-		m_fenceValue = 0;
 	}
 
 	Dx12FenceSetupResult Dx12Fence::Setup(const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& queue)
@@ -86,6 +82,7 @@ namespace directx12
 
 	uint64_t Dx12Fence::Signal()
 	{
+		//Todo: this might be better elsewhere
 		uint64_t fenceValueForSignal = ++m_fenceValue;
 		ThrowIfFailed(m_commandQueue->Signal(m_fence.Get(), fenceValueForSignal));
 
@@ -94,73 +91,30 @@ namespace directx12
 
 	void Dx12Fence::WaitCpu(uint64_t fenceValue) const
 	{
+		// Already reached the value?
 		if (m_fence->GetCompletedValue() >= fenceValue)
 			return;
 
+		// Ensure the event will be signaled when the fence reaches the value
 		ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
 
-		size_t retryCount = 0;
-		const size_t maxRetries = 3;
-		DWORD result = 0;
+#if defined(_DEBUG)
+		constexpr DWORD waitTimeout = 5000; // 5 Sekunden in Debug
+#else
+		constexpr DWORD waitTimeout = INFINITE; // Release: block indefinitely
+#endif
 
-		do
+		DWORD result = WaitForSingleObject(m_fenceEvent, waitTimeout);
+
+		if (result == WAIT_FAILED)
 		{
-			// Todo: maybe just use INFINITE. Look into this later.
-			/*
-				ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
-				DWORD result = WaitForSingleObject(m_fenceEvent, INFINITE);
-
-				if (result != WAIT_OBJECT_0)
-				{
-					m_logger.Error("Failed to wait for Fence event.");
-					throw std::runtime_error("Failed to wait for Fence event.");
-				}
-			*/
-
-			/*
-			void Dx12Fence::WaitCpu(uint64_t fenceValue) const
-			{
-				if (m_fence->GetCompletedValue() >= fenceValue)
-					return;
-
-				// Ensure the event will be signaled when the fence reaches the value
-				ThrowIfFailed(m_fence->SetEventOnCompletion(fenceValue, m_fenceEvent));
-
-				#ifdef _DEBUG
-					constexpr DWORD waitTimeout = 5000; // 5 seconds in debug builds
-				#else
-					constexpr DWORD waitTimeout = INFINITE; // Wait indefinitely in release builds
-				#endif
-
-				DWORD result = WaitForSingleObject(m_fenceEvent, waitTimeout);
-
-				if (result == WAIT_FAILED)
-				{
-					m_logger.Error("Failed to wait for Fence event.");
-					throw std::runtime_error("Failed to wait for Fence event.");
-				}
-				else if (result == WAIT_TIMEOUT)
-				{
-					m_logger.Error("Fence wait timed out. Fence value: {0}", fenceValue);
-					throw std::runtime_error("Fence wait timed out.");
-				}
-			}
-			*/
-			++retryCount;
-			result = WaitForSingleObject(m_fenceEvent, 2000);
-
-			if (result == WAIT_FAILED)
-			{
-				m_logger.Error("Failed to wait for Fence event");
-				throw std::runtime_error("Failed to wait for Fence event.");
-			}
-
-		} while (result != WAIT_OBJECT_0 && retryCount < maxRetries);
-
-		if (result == WAIT_TIMEOUT)
+			m_logger.Error("Failed to wait for Fence event.");
+			throw std::runtime_error("Failed to wait for Fence event.");
+		}
+		else if (result == WAIT_TIMEOUT)
 		{
-			m_logger.Error("Failed to wait for Fence event. Timeout period elapsed.");
-			throw std::runtime_error("Failed to wait for Fence event. Timeout period elapsed.");
+			m_logger.Error("Fence wait timed out. Fence value: {0}", fenceValue);
+			throw std::runtime_error("Fence wait timed out.");
 		}
 	}
 

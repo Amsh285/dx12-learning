@@ -13,7 +13,7 @@ namespace directx12
 	}
 
 	Dx12SwapChain::Dx12SwapChain(UINT bufferCount, bool vSync)
-		: m_bufferCount(bufferCount), m_released(false), m_vSync(vSync),
+		: m_bufferCount(bufferCount), m_vSync(vSync),
 		m_logger([]() {
 		static std::atomic<uint32_t> s_swapChainInstace = 0;
 		uint32_t swapChainId = s_swapChainInstace.fetch_add(1);
@@ -21,8 +21,19 @@ namespace directx12
 		return std::string("Dx12SwapChain#") + std::to_string(swapChainId);
 			}())
 	{
-		m_backBuffers.resize(m_bufferCount);
-		m_rtvHandles.resize(m_bufferCount);
+	}
+
+	void Dx12SwapChain::Release()
+	{
+		m_commandQueue.Reset();
+		m_swapChain.Reset();
+		m_rtvDescriptorHeap.Reset();
+
+		for (size_t i = 0; i < m_backBuffers.size(); i++)
+			m_backBuffers[i].Reset();
+
+		m_backBuffers.clear();
+		m_rtvHandles.clear();
 	}
 
 	Dx12SetupSwapChainResult Dx12SwapChain::Setup(const ComPtr<ID3D12CommandQueue>& commandQueue, const windows::WindowData& windowData)
@@ -31,6 +42,9 @@ namespace directx12
 
 		m_commandQueue = commandQueue;
 		m_windowData = windowData;
+
+		m_backBuffers.resize(m_bufferCount);
+		m_rtvHandles.resize(m_bufferCount);
 
 		Dx12SetupSwapChainResult result = CreateSwapChain();
 

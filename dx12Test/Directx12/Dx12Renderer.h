@@ -30,6 +30,8 @@ namespace directx12
 	{
 	public:
 		Dx12Renderer();
+		~Dx12Renderer();
+		void Release();
 
 		Dx12RendererSetupResult Setup(const windows::WindowData& windowData);
 
