@@ -1,31 +1,14 @@
 #pragma once
 
-#include "Dx12ResultCode.h"
-#include "Dx12Fence.h"
-#include "Dx12SwapChain.h"
+#include "Fence/Dx12Fence.h"
+#include "Swapchain/Dx12SwapChain.h"
+#include "Dx12RendererTypes.h"
 
 #include "Logger.h"
 #include "Windows/WindowData.h"
 
 namespace directx12
 {
-	enum class Dx12RendererSetupContext
-	{
-		Undefined,
-		CreateCommandQueue,
-		SetupInternalSwapChainStructure,
-		CreateCommandAllocators,
-		CreateGraphicsCommandList,
-		SetupInternalFenceStructure
-	};
-
-	struct Dx12RendererSetupResult
-	{
-		Dx12RendererSetupContext context = Dx12RendererSetupContext::Undefined;
-		Dx12ResultCode status = Dx12ResultCode::Success;
-		HRESULT code = S_OK;
-	};
-
 	class Dx12Renderer
 	{
 	public:
@@ -36,7 +19,9 @@ namespace directx12
 		Dx12RendererSetupResult Setup(const windows::WindowData& windowData);
 
 		void Render();
-		void Flush();
+
+	private:
+		static Logger CreateLogger();
 	private:
 		Dx12RendererSetupResult CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
 		Dx12RendererSetupResult CreateCommandAllocators();

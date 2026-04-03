@@ -67,13 +67,13 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			m_logger.Error("Failed to create Fence. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create Fence. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
 		}
 
 		if (!CreateEventHandle())
 		{
-			m_logger.Error("Failed to create EventHandle. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create EventHandle. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return { Dx12FenceSetupContext::CreateEventHandle, Dx12ResultCode::UnknownError, E_FAIL };
 		}
 

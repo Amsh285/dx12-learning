@@ -3,7 +3,7 @@
 #include "Logger.h"
 #include "Directx12/Runtime/Dx12Runtime.h"
 #include "Directx12/Runtime/Dx12Setup.h"
-#include "Directx12/Dx12Renderer.h"
+#include "Directx12/Renderer/Dx12Renderer.h"
 #include "Windows/WindowData.h"
 
 using namespace Microsoft::WRL;
@@ -111,6 +111,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 
 	Dx12Renderer renderer;
 	Dx12RendererSetupResult renderSetupResult = renderer.Setup(windowData);
+	/*directx12::runtime::ReportLiveObjects();
+	renderer.Release();
+	directx12::runtime::ReportLiveObjects();
+	renderSetupResult = renderer.Setup(windowData);*/
 
 	/*DXGI_ADAPTER_DESC1 desc = {};
 	adapter->GetDesc1(&desc);

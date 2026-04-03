@@ -50,7 +50,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			m_logger.Error("Failed to create SwapChain. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create SwapChain. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
 		}
 
@@ -58,7 +58,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			m_logger.Error("Failed to create RTVDescriptorheap. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create RTVDescriptorheap. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
 		}
 
@@ -66,7 +66,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			m_logger.Error("Failed to create RenderTargetViews. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create RenderTargetViews. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
 		}
 

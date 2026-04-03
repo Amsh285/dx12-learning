@@ -7,15 +7,16 @@ using namespace Microsoft::WRL;
 
 namespace directx12
 {
-	Dx12Renderer::Dx12Renderer()
-		: m_logger([]() {
-		static std::atomic<uint32_t> s_rendererInstance = 0;
-		uint32_t id = s_rendererInstance.fetch_add(1);
-
-		return  std::string("Dx12Renderer#") + std::to_string(id);
-			}())
+	Logger Dx12Renderer::CreateLogger()
 	{
+		static std::atomic<uint32_t> counter = 0;
+		return Logger("Dx12Renderer#" + std::to_string(counter++));
 	}
+
+	//Todo: Remove logger
+	Dx12Renderer::Dx12Renderer()
+		: m_logger(CreateLogger())
+	{}
 
 	Dx12Renderer::~Dx12Renderer()
 	{
@@ -44,7 +45,7 @@ namespace directx12
 		using namespace directx12::runtime;
 
 		m_commandAllocators.resize(m_frameCount);
-		m_frameFenceValues.resize(m_frameCount);
+		m_frameFenceValues.assign(m_frameCount, 0);
 
 		m_logger.Info("Initializing Dx12Renderer.");
 
@@ -52,7 +53,7 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			m_logger.Error("Failed to create CommandQueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create CommandQueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
 		}
 
@@ -60,13 +61,13 @@ namespace directx12
 
 		// probably another subcontext needed (create swapchain, rtvdescriptorheap etc...)
 		if (swapChainSetupResult.status != Dx12ResultCode::Success)
-			return { Dx12RendererSetupContext::SetupInternalSwapChainStructure, swapChainSetupResult.status, swapChainSetupResult.code };
+			return Dx12RendererSetupResult::FromSwapChain(swapChainSetupResult.context, swapChainSetupResult.status, swapChainSetupResult.hr);
 
 		result = CreateCommandAllocators();
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			m_logger.Error("Failed to create CommandAllocators. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create CommandAllocators. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
 		}
 
@@ -74,14 +75,14 @@ namespace directx12
 
 		if (result.status != Dx12ResultCode::Success)
 		{
-			m_logger.Error("Failed to create GraphicsCommandList. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.code);
+			m_logger.Error("Failed to create GraphicsCommandList. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
 		}
 
 		Dx12FenceSetupResult fenceSetupResult = m_fence.Setup(m_commandQueue);
 
 		if (fenceSetupResult.status != Dx12ResultCode::Success)
-			return { Dx12RendererSetupContext::SetupInternalFenceStructure, fenceSetupResult.status, fenceSetupResult.code };
+			return Dx12RendererSetupResult::FromFence(fenceSetupResult.context, fenceSetupResult.status, fenceSetupResult.hr);
 
 		m_logger.Info("Dx12Renderer initialization complete.");
 		return {};
@@ -90,6 +91,7 @@ namespace directx12
 	void Dx12Renderer::Render()
 	{
 		UINT currentBackBufferIndex = m_swapChain.GetCurrentBackBufferIndex();
+		m_fence.WaitCpu(m_frameFenceValues[currentBackBufferIndex]);
 
 		ComPtr<ID3D12CommandAllocator> currentCommandAllocator = m_commandAllocators[currentBackBufferIndex];
 		ComPtr<ID3D12Resource> currentBackBuffer = m_swapChain.GetCurrentBackBuffer();
@@ -138,7 +140,6 @@ namespace directx12
 			m_frameFenceValues[currentBackBufferIndex] = m_fence.Signal();
 
 			m_swapChain.UpdateBackBufferIndex();
-			m_fence.WaitCpu(m_frameFenceValues[currentBackBufferIndex]);
 		}
 	}
 
@@ -153,7 +154,7 @@ namespace directx12
 		HRESULT hr = runtime::g_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_commandQueue));
 
 		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateCommandQueue, Dx12ResultCode::CreateCommandQueueFailed, hr };
+			return Dx12RendererSetupResult::FromRenderer(Dx12RendererSetupContext::CreateCommandQueue, Dx12ResultCode::CreateCommandQueueFailed, hr);
 
 		return {};
 	}
@@ -168,7 +169,7 @@ namespace directx12
 			);
 
 			if (FAILED(hr))
-				return { Dx12RendererSetupContext::CreateCommandAllocators, Dx12ResultCode::CreateCommandAllocatorFailed, hr };
+				return Dx12RendererSetupResult::FromRenderer(Dx12RendererSetupContext::CreateCommandAllocators, Dx12ResultCode::CreateCommandAllocatorFailed, hr);
 		}
 
 		return {};
@@ -185,12 +186,12 @@ namespace directx12
 		);
 
 		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::CreateCommandListFailed, hr };
+			return Dx12RendererSetupResult::FromRenderer(Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::CreateCommandListFailed, hr);
 
 		hr = m_commandList->Close();
 
 		if (FAILED(hr))
-			return { Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::GraphicsCommandListCloseFailed, hr };
+			return Dx12RendererSetupResult::FromRenderer(Dx12RendererSetupContext::CreateGraphicsCommandList, Dx12ResultCode::GraphicsCommandListCloseFailed, hr);
 
 		return {};
 	}

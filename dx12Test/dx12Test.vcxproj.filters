@@ -30,16 +30,28 @@
     <ClCompile Include="Directx12\Runtime\Dx12Runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Directx12\Dx12Renderer.cpp">
+    <ClCompile Include="Directx12\Renderer\Dx12Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Windows\WindowData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Directx12\Dx12Fence.cpp">
+    <ClCompile Include="Directx12\Fence\Dx12Fence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Directx12\Dx12SwapChain.cpp">
+    <ClCompile Include="Directx12\Swapchain\Dx12SwapChain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx12ResultHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Directx12\Renderer\Dx12RendererTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Directx12\Fence\Dx12FenceTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Directx12\Swapchain\Dx12SwapChainTypes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,7 +68,7 @@
     <ClInclude Include="Directx12\Runtime\Dx12Runtime.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Directx12\Dx12Renderer.h">
+    <ClInclude Include="Directx12\Renderer\Dx12Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Directx12\Dx12ResultCode.h">
@@ -65,10 +77,22 @@
     <ClInclude Include="Windows\WindowData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Directx12\Dx12Fence.h">
+    <ClInclude Include="Directx12\Fence\Dx12Fence.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Directx12\Dx12SwapChain.h">
+    <ClInclude Include="Directx12\Swapchain\Dx12SwapChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx12ResultHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx12\Renderer\Dx12RendererTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx12\Fence\Dx12FenceTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Directx12\Swapchain\Dx12SwapChainTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
