@@ -18,7 +18,7 @@ void Dx12ResultHandler::Report(const directx12::Dx12RendererSetupResult& result)
 
 	logger.Error(
 		"system: {0} context: {1} state: {2} hr: 0x{3:X}",
-		system, context, result.status, result.hr
+		system, context, to_string(result.status), result.hr
 	);
 }
 

@@ -52,10 +52,7 @@ namespace directx12
 		Dx12RendererSetupResult result = CreateCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 
 		if (result.status != Dx12ResultCode::Success)
-		{
-			m_logger.Error("Failed to create CommandQueue. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
-		}
 
 		Dx12SetupSwapChainResult swapChainSetupResult = m_swapChain.Setup(m_commandQueue, windowData);
 
@@ -65,18 +62,12 @@ namespace directx12
 		result = CreateCommandAllocators();
 
 		if (result.status != Dx12ResultCode::Success)
-		{
-			m_logger.Error("Failed to create CommandAllocators. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
-		}
 
 		result = CreateGraphicsCommandList();
 
 		if (result.status != Dx12ResultCode::Success)
-		{
-			m_logger.Error("Failed to create GraphicsCommandList. Setup state: {0}. Error code: {1}", static_cast<int>(result.status), result.hr);
 			return result;
-		}
 
 		Dx12FenceSetupResult fenceSetupResult = m_fence.Setup(m_commandQueue);
 

@@ -17,7 +17,7 @@ namespace directx12
 #undef X
 	};
 
-	const char* to_string(Dx12SwapChainSetupContext ctx)
+	inline constexpr const char* to_string(Dx12SwapChainSetupContext ctx)
 	{
 		switch (ctx)
 		{
