@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "Logger.h"
+#include "Dx12ResultHandler.h"
 #include "Directx12/Runtime/Dx12Runtime.h"
 #include "Directx12/Runtime/Dx12Setup.h"
 #include "Directx12/Renderer/Dx12Renderer.h"
@@ -111,6 +112,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInst, _In_opt_ HINSTANCE hInstPrev, _In_ P
 
 	Dx12Renderer renderer;
 	Dx12RendererSetupResult renderSetupResult = renderer.Setup(windowData);
+
+	if (renderSetupResult.status != Dx12ResultCode::Success)
+	{
+		Dx12ResultHandler::Report(renderSetupResult);
+		return EXIT_FAILURE;
+	}
+
 	/*directx12::runtime::ReportLiveObjects();
 	renderer.Release();
 	directx12::runtime::ReportLiveObjects();

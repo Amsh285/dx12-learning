@@ -59,7 +59,6 @@ namespace directx12
 
 		Dx12SetupSwapChainResult swapChainSetupResult = m_swapChain.Setup(m_commandQueue, windowData);
 
-		// probably another subcontext needed (create swapchain, rtvdescriptorheap etc...)
 		if (swapChainSetupResult.status != Dx12ResultCode::Success)
 			return Dx12RendererSetupResult::FromSwapChain(swapChainSetupResult.context, swapChainSetupResult.status, swapChainSetupResult.hr);
 

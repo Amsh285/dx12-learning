@@ -6,64 +6,109 @@
 
 namespace directx12
 {
-    enum class Dx12RendererSetupContext
-    {
-        Undefined,
-        CreateCommandQueue,
-        SetupInternalSwapChainStructure,
-        CreateCommandAllocators,
-        CreateGraphicsCommandList,
-        SetupInternalFenceStructure
-    };
+#define DX12_RENDERER_SETUP_CONTEXTS(X) \
+    X(Undefined) \
+    X(CreateCommandQueue) \
+    X(CreateCommandAllocators) \
+    X(CreateGraphicsCommandList)
 
-    struct Dx12RendererSetupResult
-    {
-        Dx12RendererSetupContext context = Dx12RendererSetupContext::Undefined;
-        Dx12SwapChainSetupContext swapChainContext = Dx12SwapChainSetupContext::Undefined;
-        Dx12FenceSetupContext fenceContext = Dx12FenceSetupContext::Undefined;
-        Dx12ResultCode status = Dx12ResultCode::Success;
-        HRESULT hr = S_OK;
+	enum class Dx12RendererSetupContext
+	{
+#define X(name) name,
+		DX12_RENDERER_SETUP_CONTEXTS(X)
+#undef X
+	};
 
-        static Dx12RendererSetupResult FromSwapChain(
-            Dx12SwapChainSetupContext scContext,
-            Dx12ResultCode status,
-            HRESULT hr)
-        {
-            return {
-                Dx12RendererSetupContext::SetupInternalSwapChainStructure,
-                scContext,
-                Dx12FenceSetupContext::Undefined,
-                status,
-                hr
-            };
-        }
+	inline constexpr const char* to_string(Dx12RendererSetupContext ctx)
+	{
+		switch (ctx)
+		{
+#define X(name) case Dx12RendererSetupContext::name: return #name;
+			DX12_RENDERER_SETUP_CONTEXTS(X)
+#undef X
+		default:
+			return "unknown Dx12RendererSetupContext";
+		}
+	}
 
-        static Dx12RendererSetupResult FromFence(
-            Dx12FenceSetupContext fContext,
-            Dx12ResultCode status,
-            HRESULT hr)
-        {
-            return {
-                Dx12RendererSetupContext::Undefined,
-                Dx12SwapChainSetupContext::Undefined,
-                fContext,
-                status,
-                hr
-            };
-        }
+#define DX12_RENDERER_SUBSYSTEM(X) \
+	X(None) \
+	X(SwapChain) \
+	X(Fence)
 
-        static Dx12RendererSetupResult FromRenderer(
-            Dx12RendererSetupContext context,
-            Dx12ResultCode status,
-            HRESULT hr)
-        {
-            return {
-                context,
-                Dx12SwapChainSetupContext::Undefined,
-                Dx12FenceSetupContext::Undefined,
-                status,
-                hr
-            };
-        }
-    };
+	enum class Dx12RendererSubsystem
+	{
+#define X(name) name,
+		DX12_RENDERER_SUBSYSTEM(X)
+#undef X
+	};
+
+	inline constexpr const char* to_string(Dx12RendererSubsystem subSystem)
+	{
+		switch (subSystem)
+		{
+#define X(name) case Dx12RendererSubsystem::name: return #name;
+			DX12_RENDERER_SUBSYSTEM(X)
+#undef X
+		default:
+			return "unknown Dx12RendererSubsystem";
+		}
+	}
+
+	struct Dx12RendererSetupResult
+	{
+		Dx12RendererSetupContext context = Dx12RendererSetupContext::Undefined;
+		Dx12RendererSubsystem subsystem = Dx12RendererSubsystem::None;
+		Dx12ResultCode status = Dx12ResultCode::Success;
+		HRESULT hr = S_OK;
+
+		union
+		{
+			
+			Dx12SwapChainSetupContext swapChain;
+			Dx12FenceSetupContext fence;
+		} subContext;
+
+		static Dx12RendererSetupResult FromSwapChain(
+			Dx12SwapChainSetupContext scContext,
+			Dx12ResultCode status,
+			HRESULT hr)
+		{
+			Dx12RendererSetupResult ctx{};
+			ctx.subsystem = Dx12RendererSubsystem::SwapChain;
+			ctx.status = status;
+			ctx.hr = hr;
+			ctx.subContext.swapChain = scContext;
+
+			return ctx;
+		}
+
+		static Dx12RendererSetupResult FromFence(
+			Dx12FenceSetupContext fContext,
+			Dx12ResultCode status,
+			HRESULT hr)
+		{
+			Dx12RendererSetupResult ctx{};
+			ctx.subsystem = Dx12RendererSubsystem::Fence;
+			ctx.status = status;
+			ctx.hr = hr;
+			ctx.subContext.fence = fContext;
+
+			return ctx;
+		}
+
+		static Dx12RendererSetupResult FromRenderer(
+			Dx12RendererSetupContext context,
+			Dx12ResultCode status,
+			HRESULT hr)
+		{
+			Dx12RendererSetupResult ctx{};
+			ctx.subsystem = Dx12RendererSubsystem::None;
+			ctx.status = status;
+			ctx.hr = hr;
+			ctx.context = context;
+
+			return ctx;
+		}
+	};
 }

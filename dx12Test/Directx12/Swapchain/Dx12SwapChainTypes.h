@@ -4,13 +4,30 @@
 
 namespace directx12
 {
+#define DX12_SWAPCHAIN_SETUP_CONTEXT(X) \
+	X(Undefined) \
+	X(CreateSwapChain) \
+	X(CreateRTVDescriptorHeap) \
+	X(UpdateRenderTargetViews)
+
 	enum class Dx12SwapChainSetupContext
 	{
-		Undefined,
-		CreateSwapChain,
-		CreateRTVDescriptorHeap,
-		UpdateRenderTargetViews
+#define X(name) name,
+		DX12_SWAPCHAIN_SETUP_CONTEXT(X)
+#undef X
 	};
+
+	const char* to_string(Dx12SwapChainSetupContext ctx)
+	{
+		switch (ctx)
+		{
+#define X(name) case Dx12SwapChainSetupContext::name: return #name;
+			DX12_SWAPCHAIN_SETUP_CONTEXT(X)
+#undef X
+		default:
+			return "Unknown Dx12SwapChainSetupContext";
+		}
+	}
 
 	struct Dx12SetupSwapChainResult
 	{
